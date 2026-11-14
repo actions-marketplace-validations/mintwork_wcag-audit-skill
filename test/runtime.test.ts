@@ -48,6 +48,12 @@ describe("runtime scan (Playwright + axe-core)", () => {
     expect(r.findings.find((f) => f.ruleId === "keyboard-trap")!.location.selector).toBe("#trap");
   });
 
+  it("sees focus indicators on pseudo-elements, children and siblings, and moving skip links", async (ctx) => {
+    if (!browserOk) ctx.skip();
+    const r = await scanUrl(`${base}/focus-indicators.html`);
+    expect(r.findings.filter((f) => f.ruleId === "focus-visible")).toEqual([]);
+  });
+
   it("reports nothing on the clean page", async (ctx) => {
     if (!browserOk) ctx.skip();
     const r = await scanUrl(`${base}/good.html`);

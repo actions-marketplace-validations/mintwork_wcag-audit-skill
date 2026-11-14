@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Focus indicators the style snapshot cannot see</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; }
+    :focus { outline: none; }
+    /* 1. Skip link: off screen until focused. */
+    .skip { position: absolute; left: -9999px; }
+    .skip:focus { left: 8px; top: 8px; background: #000; color: #fff; padding: 8px; }
+    /* 2. Ring drawn by a pseudo-element. */
+    .card { position: relative; display: inline-block; padding: 12px; color: #000; }
+    .card:focus-visible::after { content: ""; position: absolute; inset: -4px; border: 3px solid #1a5fb4; }
+    /* 3. Ring on a child. */
+    .pill span { display: inline-block; padding: 4px 8px; }
+    .pill:focus-visible span { box-shadow: 0 0 0 3px #1a5fb4; }
+    /* 4. Visually hidden radio, ring on the sibling label (Tailwind "peer" pattern). */
+    .seg { position: relative; display: inline-block; }
+    .seg input { appearance: none; position: absolute; width: 0; height: 0; margin: 0; }
+    .seg label { display: inline-block; padding: 6px 10px; border: 1px solid #ccc; }
+    .seg input:focus-visible + label { border-color: #1a5fb4; box-shadow: 0 0 0 2px #1a5fb4; }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <main id="main">
+    <h1>Focus indicators</h1>
+    <p><a class="card" href="/card">Card link</a></p>
+    <p><button class="pill" type="button"><span>Pill button</span></button></p>
+    <p><span class="seg"><input type="radio" name="t" id="light" aria-label="Light"><label for="light">Light</label></span></p>
+  </main>
+</body>
+</html>

@@ -118,6 +118,7 @@ export async function keyboardAudit(page: Page, url: string, opts: KeyboardOptio
   }
 
   // --- Focus visible: compare each focused element's style with its unfocused style.
+  const candidates: Stop[] = [];
   const unique = new Map<string, Stop>();
   for (const s of seq) if (s && !unique.has(s.selector)) unique.set(s.selector, s);
   await page.evaluate("document.activeElement && document.activeElement.blur && document.activeElement.blur()");
@@ -131,18 +132,80 @@ export async function keyboardAudit(page: Page, url: string, opts: KeyboardOptio
       `(() => { const el = document.querySelector(${JSON.stringify(stop.selector)}); if (!el) return null; el.focus({ focusVisible: true }); const s = window.__wcagAudit.styleOf(el); el.blur(); return s; })()`,
     )) as string | null;
     if (refocused !== null && refocused !== blurred) continue;
+    candidates.push(stop);
+  }
+
+  // Verification: the style snapshot misses indicators drawn on ::before/::after, on a child
+  // (a card whose inner link gets the ring) or on a sibling (Tailwind peer-focus-visible), and
+  // skip links that move on screen. Compare pixels around the element, focused vs blurred.
+  const order = [...unique.keys()];
+  for (const [i, stop] of candidates.entries()) {
+    const visual = i < MAX_PIXEL_CHECKS ? await focusChangesPixels(page, stop.selector, order[order.indexOf(stop.selector) - 1]) : "unknown";
+    if (visual === "changed") continue;
     findings.push(
       make("focus-visible", url, stop, {
         title: "Keyboard focus must be visible",
         wcag: ["2.4.7"],
         severity: "serious",
-        message: "Focusing this element changes no outline, shadow, border, color or background, so keyboard users cannot see where they are.",
+        message:
+          visual === "unchanged"
+            ? "Focusing this element changes nothing on screen (no outline, shadow, border, color or background on it or around it), so keyboard users cannot see where they are."
+            : "Focusing this element changes none of its outline, shadow, border, color or background; a pixel check was not possible (animated area or off-screen), so confirm visually.",
         fix: "Do not remove outlines without a replacement. Add e.g. `:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }`.",
-        confidence: "medium",
+        confidence: visual === "unchanged" ? "medium" : "low",
       }),
     );
   }
   return findings;
+}
+
+/** Pixel checks are ~0.5 s each; beyond this many candidates, findings are reported unverified (low confidence). */
+const MAX_PIXEL_CHECKS = 60;
+const SETTLE_MS = 200;
+
+/**
+ * Focus the element the way a keyboard user would (Tab from the previous stop), screenshot the area
+ * around it, blur, screenshot again. "changed" means some visible focus indicator exists.
+ */
+async function focusChangesPixels(page: Page, selector: string, prevSelector?: string): Promise<"changed" | "unchanged" | "unknown"> {
+  try {
+    const sel = JSON.stringify(selector);
+    let focused = false;
+    if (prevSelector) {
+      await page.evaluate(`document.querySelector(${JSON.stringify(prevSelector)})?.focus()`);
+      await page.keyboard.press("Tab");
+      focused = (await page.evaluate(`document.activeElement === document.querySelector(${sel})`)) as boolean;
+    }
+    if (!focused) {
+      focused = (await page.evaluate(`(() => { const el = document.querySelector(${sel}); el?.focus({ focusVisible: true }); return !!el && document.activeElement === el; })()`)) as boolean;
+    }
+    if (!focused) return "unknown";
+    await page.waitForTimeout(SETTLE_MS);
+    // Area: the element (or, if it has no box, e.g. a visually hidden radio, its nearest boxed ancestor) plus a margin for rings.
+    const clip = (await page.evaluate(`(() => {
+      let el = document.querySelector(${sel});
+      let r = el.getBoundingClientRect();
+      while ((r.width < 4 || r.height < 4) && el.parentElement) { el = el.parentElement; r = el.getBoundingClientRect(); }
+      const pad = 16, vw = innerWidth, vh = innerHeight;
+      const x = Math.max(0, r.left - pad), y = Math.max(0, r.top - pad);
+      const w = Math.min(vw, r.right + pad) - x, h = Math.min(vh, r.bottom + pad) - y;
+      return w >= 2 && h >= 2 ? { x, y, width: w, height: h } : null;
+    })()`)) as { x: number; y: number; width: number; height: number } | null;
+    if (!clip) return "unknown";
+    const focusedShot = await page.screenshot({ clip, animations: "disabled", caret: "hide" });
+    await page.evaluate(`document.querySelector(${sel})?.blur()`);
+    await page.waitForTimeout(SETTLE_MS);
+    const blurredShot = await page.screenshot({ clip, animations: "disabled", caret: "hide" });
+    if (!focusedShot.equals(blurredShot)) {
+      // Make sure the difference is focus, not an animation or video playing in that area.
+      await page.waitForTimeout(SETTLE_MS);
+      const again = await page.screenshot({ clip, animations: "disabled", caret: "hide" });
+      return again.equals(blurredShot) ? "changed" : "unknown";
+    }
+    return "unchanged";
+  } catch {
+    return "unknown";
+  }
 }
 
 function make(
