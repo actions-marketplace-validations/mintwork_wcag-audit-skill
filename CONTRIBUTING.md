@@ -67,29 +67,29 @@ Regenerate it when the text output changes. Never record real projects or third-
 ## Releasing
 
 Versions follow semver. The GitHub Action is consumed as `ranjan-mohanty/wcag-audit-skill@v0`,
-so every release gets an immutable `vX.Y.Z` tag **and** the major tag `v0` is moved to it
-(the standard GitHub Actions convention). The action builds the CLI from the tagged source,
-so tags must point at commits where `npm ci && npm run build` works.
+so every release gets an immutable `vX.Y.Z` tag and the major tag `v0` is moved to it. The
+[release workflow](.github/workflows/release.yml) does the npm publish and the tag move when a
+GitHub Release is published. The action builds the CLI from the tagged source, so tags must point
+at commits where `npm ci && npm run build` works.
 
 1. Update `version` in `package.json`, `.claude-plugin/marketplace.json` and
    `skills/wcag-audit/SKILL.md` (`metadata.version`); move the `Unreleased` entries in
-   `CHANGELOG.md` under the new version; add `docs/release-notes-vX.Y.Z.md`.
+   `CHANGELOG.md` under the new version; add `docs/release-notes-vX.Y.Z.md`. Commit and push.
 2. `npm ci && npm run typecheck && npm test`, and check `npm pack --dry-run` lists only
    `dist/`, `skills/`, `integrations/`, `.claude-plugin/`, README, CHANGELOG and LICENSE.
-3. Commit, then tag and move the major tag:
+3. Create the release; the workflow checks that the tag matches `package.json`, runs the tests,
+   publishes to npm with provenance and moves `v0`:
 
    ```bash
-   git tag -a v0.2.0 -m "v0.2.0"
-   git tag -fa v0 -m "v0 -> v0.2.0" v0.2.0^{}   # move the major tag to the same commit
-   git push origin main v0.2.0
-   git push origin v0 --force                  # only the moving major tag is ever force-pushed
+   gh release create v0.2.0 --title "v0.2.0" --notes-file docs/release-notes-v0.2.0.md
    ```
 
-   Verify with `git rev-parse v0^{commit} v0.2.0^{commit}` (both must print the same SHA).
    Never move or delete a `vX.Y.Z` tag once pushed. A breaking change to action inputs or
-   outputs starts a new major tag (`v1`) and leaves `v0` where it is.
-4. Publish to npm (`npm publish`; `prepublishOnly` builds and runs the tests) and create the
-   GitHub Release from the release notes.
+   outputs needs a new major tag (`v1`): change it in the release workflow first.
+
+**npm auth:** the workflow uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)
+(configure `ranjan-mohanty/wcag-audit-skill` + `release.yml` on the package's npm settings page),
+or an `NPM_TOKEN` repository secret as a fallback. A version already on npm is skipped.
 
 ## Commits and PRs
 
