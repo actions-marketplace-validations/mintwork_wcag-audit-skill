@@ -128,7 +128,8 @@ export function hasClickHandler(el: ElementNode): boolean {
 }
 
 export function hasKeyHandler(el: ElementNode): boolean {
-  return ["onkeydown", "onkeyup", "onkeypress"].some((n) => [...el.attrs.keys()].some((k) => k === n || k.startsWith(n + ".")));
+  // onKeyDown, Vue @keydown.enter (onkeydown.enter), React onKeyDownCapture / Svelte onkeydowncapture.
+  return ["onkeydown", "onkeyup", "onkeypress"].some((n) => [...el.attrs.keys()].some((k) => k === n || k === n + "capture" || k.startsWith(n + ".")));
 }
 
 export function tabIndexValue(el: ElementNode): number | undefined {
@@ -153,7 +154,7 @@ export function isIconComponent(el: ElementNode): boolean {
   return el.isComponent && (el.isIcon === true || ICON_COMPONENT.test(name));
 }
 
-const CLICK_HANDLERS = ["onclick", "onmousedown", "onmouseup", "onpointerdown", "onpointerup", "ontap"];
+const CLICK_HANDLERS = ["onclick", "onmousedown", "onmouseup", "onpointerdown", "onpointerup", "ontap"].flatMap((n) => [n, n + "capture"]);
 
 /** A handler that only stops propagation (`@click.stop`, `onClick={(e) => e.stopPropagation()}`) does nothing for the user. */
 function isStopOnlyHandler(el: ElementNode, name: string): boolean {

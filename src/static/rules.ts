@@ -397,7 +397,7 @@ export const rules: Rule[] = [
         if (onlyStopsPropagation(el)) return;
         // <li onClick={run}><button>Run</button></li>: keyboard activation of the inner control bubbles here.
         // Only for click handlers (not drag/pointer gestures), and only for controls that are always rendered.
-        if (has(el, "onclick") && containsNativeControl(el)) return;
+        if ((has(el, "onclick") || has(el, "onclickcapture")) && containsNativeControl(el)) return;
         const focusable = tabIndexValue(el) !== undefined && tabIndexValue(el)! >= 0;
         ctx.report({
           el,

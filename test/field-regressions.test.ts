@@ -169,3 +169,11 @@ describe("file collection and locations", () => {
     expect(loc.uriBaseId).toBeUndefined();
   });
 });
+
+describe("interactive-role-keyboard", () => {
+  it("counts capture-phase key handlers (onKeyDownCapture / onkeydowncapture)", () => {
+    expect(rulesIn("S.tsx", `export const S = () => <div role="slider" tabIndex={0} aria-valuenow={1} onMouseDown={seek} onKeyDownCapture={keys} />;`)).toEqual([]);
+    expect(rulesIn("S.svelte", `<div role="button" tabindex="0" onclick={go} onkeydowncapture={keys}>Go</div>`)).toEqual([]);
+    expect(rulesIn("T.tsx", `export const S = () => <div role="button" tabIndex={0} onClickCapture={go}>Go</div>;`)).toContain("interactive-role-keyboard");
+  });
+});
