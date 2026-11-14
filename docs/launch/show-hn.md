@@ -47,7 +47,7 @@ conformance, and the report says what still needs a person (screen reader pass, 
 captions, cognitive review). MDX isn't scanned yet, and labels passed in from a component in
 another file are only visible to the runtime scan.
 
-MIT, Node 20+, three runtime dependencies. I'd love false-positive reports with a minimal
+MIT, Node 22+, three runtime dependencies. I'd love false-positive reports with a minimal
 snippet; those have driven most of the improvements so far.
 
 ---

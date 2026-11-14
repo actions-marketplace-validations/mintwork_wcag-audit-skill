@@ -14,7 +14,7 @@ Works with **Claude Code**, **Codex**, **Cursor** and any agent that reads `SKIL
 [![npm](https://img.shields.io/npm/v/wcag-audit-skill?color=cb3837&logo=npm)](https://www.npmjs.com/package/wcag-audit-skill)
 [![npm downloads](https://img.shields.io/npm/dm/wcag-audit-skill?color=cb3837)](https://www.npmjs.com/package/wcag-audit-skill)
 ![WCAG 2.2](https://img.shields.io/badge/WCAG-2.2%20AA-1a5fb4)
-![Node 20+](https://img.shields.io/badge/node-%3E%3D20-339933)
+![Node 22+](https://img.shields.io/badge/node-%3E%3D22-339933)
 ![License MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Deps 3](https://img.shields.io/badge/runtime%20deps-3-brightgreen)
 [![GitHub stars](https://img.shields.io/github/stars/ranjan-mohanty/wcag-audit-skill?style=social)](https://github.com/ranjan-mohanty/wcag-audit-skill/stargazers)
@@ -169,7 +169,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: { node-version: 20 }
+        with: { node-version: lts/* }
       - run: npx --yes wcag-audit-skill scan src --sarif -o wcag.sarif --fail-on serious
       - uses: github/codeql-action/upload-sarif@v4
         if: always()
