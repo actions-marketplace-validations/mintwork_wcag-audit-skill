@@ -1,4 +1,4 @@
-name: "mintwork WCAG Audit"
+name: "WCAG Accessibility Audit"
 description: "Audit your UI for WCAG 2.2 accessibility failures and report them in GitHub code scanning."
 author: "mintwork"
 branding:
