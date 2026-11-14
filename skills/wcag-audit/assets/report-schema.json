@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wcag-audit-skill/report-schema.json",
+  "title": "WCAG audit findings",
+  "type": "object",
+  "required": ["schemaVersion", "standard", "scope", "findings"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "standard": { "type": "string", "examples": ["WCAG 2.2 AA"] },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "paths": { "type": "array", "items": { "type": "string" } },
+        "urls": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "notTested": { "type": "array", "items": { "type": "string" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+  },
+  "$defs": {
+    "location": {
+      "type": "object",
+      "properties": {
+        "file": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string" },
+        "selector": { "type": "string" }
+      },
+      "anyOf": [{ "required": ["file"] }, { "required": ["url"] }]
+    },
+    "finding": {
+      "type": "object",
+      "required": ["id", "ruleId", "verdict", "title", "wcag", "source", "locations", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "verdict": { "enum": ["confirmed", "needs_validation", "rejected"] },
+        "title": { "type": "string", "minLength": 1 },
+        "wcag": { "type": "array", "items": { "type": "string", "pattern": "^\\d\\.\\d\\.\\d{1,2}$" } },
+        "level": { "enum": ["A", "AA", "AAA"] },
+        "severity": { "enum": ["critical", "serious", "moderate", "minor"] },
+        "confidence": { "enum": ["high", "medium"] },
+        "source": { "enum": ["static", "runtime", "keyboard", "manual"] },
+        "locations": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/location" } },
+        "evidence": { "type": "string", "minLength": 1 },
+        "impact": { "type": "string" },
+        "verification": { "type": "string" },
+        "question": { "type": "string" },
+        "fix": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": { "enum": ["applied", "proposed", "not_applicable", "blocked"] },
+            "summary": { "type": "string" },
+            "files": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "verdict": { "const": "confirmed" } } },
+          "then": { "required": ["severity", "confidence", "verification", "fix"] }
+        },
+        {
+          "if": { "properties": { "verdict": { "const": "rejected" } } },
+          "then": { "required": ["verification"] }
+        },
+        {
+          "if": { "properties": { "verdict": { "const": "needs_validation" } } },
+          "then": {
+            "required": ["question"],
+            "properties": { "fix": { "properties": { "status": { "not": { "const": "applied" } } } } }
+          }
+        }
+      ]
+    }
+  }
+}
