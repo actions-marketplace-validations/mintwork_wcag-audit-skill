@@ -8,6 +8,14 @@ within a minor line.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-14
+
+### Changed
+
+- GitHub Action metadata for the GitHub Marketplace listing (author, shorter description).
+- Published from CI with npm trusted publishing (OIDC); no npm token is stored.
+- README badges consolidated into one row.
+
 ## [0.1.1] - 2026-11-14
 
 ### Changed
@@ -59,6 +67,7 @@ First public release.
 - Capture-phase handlers recognized; `onClickCapture` containers are not reported as fake buttons.
 - Inputs whose bound `type` is a choice of text-like literals are checked.
 
-[Unreleased]: https://github.com/mintwork/wcag-audit-skill/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/mintwork/wcag-audit-skill/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/mintwork/wcag-audit-skill/releases/tag/v0.1.2
 [0.1.1]: https://github.com/mintwork/wcag-audit-skill/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mintwork/wcag-audit-skill/releases/tag/v0.1.0

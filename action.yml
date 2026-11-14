@@ -1,6 +1,6 @@
 name: "WCAG Audit"
-description: "Scan HTML/JSX/Vue/Svelte/Astro source (and optionally a running URL) for WCAG 2.2 accessibility failures; upload SARIF to code scanning."
-author: "wcag-audit-skill contributors"
+description: "Audit your UI for WCAG 2.2 accessibility failures and report them in GitHub code scanning."
+author: "mintwork"
 branding:
   icon: "eye"
   color: "blue"

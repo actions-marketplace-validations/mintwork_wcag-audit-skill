@@ -4,7 +4,7 @@ description: Audits web UIs for WCAG 2.2 accessibility (a11y) failures and fixes
 license: MIT. LICENSE has complete terms
 compatibility: Requires Node.js 20+ for the bundled CLI (npx @mintwork/wcag-audit-skill). The runtime phase needs a Chromium browser (Playwright Chromium, Chrome or Edge) and a reachable URL. Works without the CLI in degraded, manual mode.
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
   standard: "WCAG 2.2 AA"
 ---
 
