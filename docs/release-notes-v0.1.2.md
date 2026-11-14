@@ -1,4 +1,4 @@
-# WCAG Audit v0.1.2
+# mintwork WCAG Audit v0.1.2
 
 **WCAG 2.2 accessibility checks in every pull request, now on the GitHub Marketplace.** Scans
 HTML, JSX/TSX, Vue, Svelte and Astro source (and optionally a running URL in a real browser), and
