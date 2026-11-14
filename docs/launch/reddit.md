@@ -31,7 +31,7 @@ Install:
 /plugin install wcag-audit@wcag-audit-skill
 ```
 
-It also works in Codex (AGENTS.md), Cursor, or as `npx wcag-audit-skill scan ./src`.
+It also works in Codex (AGENTS.md), Cursor, or as `npx @mintwork/wcag-audit-skill scan ./src`.
 
 Tested on 10 real codebases (6,880 files) and 7 live pages with hand-checked findings: 91%
 true positives on the latest sample, 0 false positives. It can't replace a screen-reader
@@ -52,9 +52,9 @@ I wanted one accessibility check that works across the frameworks I touch, gives
 tells me which WCAG criterion failed and how to fix it, and plugs into GitHub code scanning.
 
 ```
-npx wcag-audit-skill scan ./src                 # static: HTML / JSX / TSX / Vue / Svelte / Astro
-npx wcag-audit-skill scan http://localhost:3000 # runtime: axe-core + keyboard checks in Chrome
-npx wcag-audit-skill scan ./src --sarif -o a11y.sarif
+npx @mintwork/wcag-audit-skill scan ./src                 # static: HTML / JSX / TSX / Vue / Svelte / Astro
+npx @mintwork/wcag-audit-skill scan http://localhost:3000 # runtime: axe-core + keyboard checks in Chrome
+npx @mintwork/wcag-audit-skill scan ./src --sarif -o a11y.sarif
 ```
 
 Each finding looks like:

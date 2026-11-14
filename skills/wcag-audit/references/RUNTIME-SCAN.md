@@ -10,7 +10,7 @@ invisible focus.
 - Otherwise start the app: look at `package.json` scripts (`dev`, `start`, `preview`),
   README, `docker-compose.yml`. Start it **in the background**, wait until it responds
   (`curl -sf http://localhost:3000 >/dev/null`), and stop it when done.
-- Static sites: `npx wcag-audit-skill scan ./dist/index.html --runtime` opens the file in
+- Static sites: `npx @mintwork/wcag-audit-skill scan ./dist/index.html --runtime` opens the file in
   the browser directly.
 - Never scan production systems that the user did not name, and never submit real forms
   (orders, emails, payments) during an audit.
@@ -18,7 +18,7 @@ invisible focus.
 ## 2. Scan
 
 ```bash
-npx wcag-audit-skill scan http://localhost:3000 http://localhost:3000/signup \
+npx @mintwork/wcag-audit-skill scan http://localhost:3000 http://localhost:3000/signup \
   --json -o .wcag-audit/runtime.json --fail-on none
 ```
 

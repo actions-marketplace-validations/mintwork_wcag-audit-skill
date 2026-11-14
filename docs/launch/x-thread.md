@@ -58,7 +58,7 @@ Claude Code:
 /plugin marketplace add mintwork/wcag-audit-skill
 
 CLI:
-npx wcag-audit-skill scan ./src
+npx @mintwork/wcag-audit-skill scan ./src
 
 CI:
 uses: mintwork/wcag-audit-skill@v0

@@ -11,15 +11,15 @@ Verified, machine-readable findings. SARIF for GitHub code scanning.
 Works with **Claude Code**, **Codex**, **Cursor** and any agent that reads `SKILL.md` or `AGENTS.md`.
 
 [![CI](https://github.com/mintwork/wcag-audit-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/mintwork/wcag-audit-skill/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/wcag-audit-skill?color=cb3837&logo=npm)](https://www.npmjs.com/package/wcag-audit-skill)
-[![npm downloads](https://img.shields.io/npm/dm/wcag-audit-skill?color=cb3837)](https://www.npmjs.com/package/wcag-audit-skill)
+[![npm](https://img.shields.io/npm/v/@mintwork/wcag-audit-skill?color=cb3837&logo=npm)](https://www.npmjs.com/package/@mintwork/wcag-audit-skill)
+[![npm downloads](https://img.shields.io/npm/dm/@mintwork/wcag-audit-skill?color=cb3837)](https://www.npmjs.com/package/@mintwork/wcag-audit-skill)
 ![WCAG 2.2](https://img.shields.io/badge/WCAG-2.2%20AA-1a5fb4)
 ![Node 22+](https://img.shields.io/badge/node-%3E%3D22-339933)
 ![License MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Deps 3](https://img.shields.io/badge/runtime%20deps-3-brightgreen)
 [![GitHub stars](https://img.shields.io/github/stars/mintwork/wcag-audit-skill?style=social)](https://github.com/mintwork/wcag-audit-skill/stargazers)
 
-<img src="docs/demo.gif" width="900" alt="Terminal demo. npx wcag-audit-skill scan bad/ProductCard.tsx reports 10 issues, each with severity, rule, WCAG criterion (for example 1.1.1 Non-text Content, 2.1.1 Keyboard, 4.1.2 Name, Role, Value), file and line, evidence and a concrete fix. Scanning a folder of HTML, React, Vue and Svelte files reports 42 issues. Scanning the fixed component reports 0 issues.">
+<img src="docs/demo.gif" width="900" alt="Terminal demo. npx @mintwork/wcag-audit-skill scan bad/ProductCard.tsx reports 10 issues, each with severity, rule, WCAG criterion (for example 1.1.1 Non-text Content, 2.1.1 Keyboard, 4.1.2 Name, Role, Value), file and line, evidence and a concrete fix. Scanning a folder of HTML, React, Vue and Svelte files reports 42 issues. Scanning the fixed component reports 0 issues.">
 
 </div>
 
@@ -44,7 +44,7 @@ Roughly **95% of the top million home pages have detectable WCAG failures** ([We
 Install the skill and say **"audit this for accessibility and fix it"**:
 
 ```text
-$ npx wcag-audit-skill scan src/Checkout.tsx      # output abridged
+$ npx @mintwork/wcag-audit-skill scan src/Checkout.tsx      # output abridged
 
   CRITICAL form-label      WCAG 1.3.1, 3.3.2, 4.1.2 (A)   src/Checkout.tsx:6:7
            Control relies on placeholder text, which disappears on input and is not a reliable label.
@@ -82,7 +82,7 @@ The agent verifies each finding against the source, then applies minimal, explai
 | **Any skills-compatible agent** | `npx skills add https://github.com/mintwork/wcag-audit-skill --skill wcag-audit` |
 | **Codex / AGENTS.md agents** | paste [`integrations/codex/AGENTS.md`](integrations/codex/AGENTS.md) into your `AGENTS.md` |
 | **Cursor** | copy [`integrations/cursor/wcag-audit.mdc`](integrations/cursor/wcag-audit.mdc) to `.cursor/rules/` |
-| **CLI only** | `npx wcag-audit-skill scan ./src` |
+| **CLI only** | `npx @mintwork/wcag-audit-skill scan ./src` |
 | **CI** | [GitHub Action](#github-action) → findings in code scanning |
 
 Manual Claude Code install: `cp -r skills/wcag-audit ~/.claude/skills/` (more in [integrations/claude-code](integrations/claude-code/README.md)).
@@ -102,13 +102,13 @@ The skill ([`skills/wcag-audit/SKILL.md`](skills/wcag-audit/SKILL.md)) gives the
 ## CLI
 
 ```bash
-npx wcag-audit-skill scan ./src                        # static: HTML / JSX / TSX / Vue / Svelte / Astro
-npx wcag-audit-skill scan http://localhost:3000        # runtime: axe-core + keyboard checks in Chromium
-npx wcag-audit-skill scan ./dist/index.html --runtime  # open a local file in the browser
-npx wcag-audit-skill scan ./src --json -o a11y.json    # machine-readable
-npx wcag-audit-skill scan ./src --sarif -o a11y.sarif  # GitHub code scanning
-npx wcag-audit-skill verify a11y.json                  # after fixing: resolved / remaining / introduced
-npx wcag-audit-skill rules                             # list rules + WCAG mapping
+npx @mintwork/wcag-audit-skill scan ./src                        # static: HTML / JSX / TSX / Vue / Svelte / Astro
+npx @mintwork/wcag-audit-skill scan http://localhost:3000        # runtime: axe-core + keyboard checks in Chromium
+npx @mintwork/wcag-audit-skill scan ./dist/index.html --runtime  # open a local file in the browser
+npx @mintwork/wcag-audit-skill scan ./src --json -o a11y.json    # machine-readable
+npx @mintwork/wcag-audit-skill scan ./src --sarif -o a11y.sarif  # GitHub code scanning
+npx @mintwork/wcag-audit-skill verify a11y.json                  # after fixing: resolved / remaining / introduced
+npx @mintwork/wcag-audit-skill rules                             # list rules + WCAG mapping
 ```
 
 | Option | |
@@ -170,7 +170,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with: { node-version: lts/* }
-      - run: npx --yes wcag-audit-skill scan src --sarif -o wcag.sarif --fail-on serious
+      - run: npx --yes @mintwork/wcag-audit-skill scan src --sarif -o wcag.sarif --fail-on serious
       - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with: { sarif_file: wcag.sarif, category: wcag-audit }

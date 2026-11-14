@@ -8,6 +8,17 @@ within a minor line.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-14
+
+### Changed
+
+- The npm package is now **`@mintwork/wcag-audit-skill`**; run it with `npx @mintwork/wcag-audit-skill`. The unscoped
+  `wcag-audit-skill` package is deprecated and points here.
+- The repository moved to [github.com/mintwork/wcag-audit-skill](https://github.com/mintwork/wcag-audit-skill); old URLs
+  redirect.
+- Skill, plugin and editor-integration instructions use the new package name.
+- The GitHub Action now runs `@mintwork/wcag-audit-skill` when you pin `version:`.
+
 ## [0.1.0] - 2026-11-14
 
 First public release.
@@ -48,5 +59,6 @@ First public release.
 - Capture-phase handlers recognized; `onClickCapture` containers are not reported as fake buttons.
 - Inputs whose bound `type` is a choice of text-like literals are checked.
 
-[Unreleased]: https://github.com/mintwork/wcag-audit-skill/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mintwork/wcag-audit-skill/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/mintwork/wcag-audit-skill/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mintwork/wcag-audit-skill/releases/tag/v0.1.0

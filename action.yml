@@ -61,7 +61,7 @@ runs:
       run: |
         set +e
         if [ -n "$WCAG_VERSION" ]; then
-          cmd=(npx --yes "wcag-audit-skill@$WCAG_VERSION")
+          cmd=(npx --yes "@mintwork/wcag-audit-skill@$WCAG_VERSION")
         else
           cmd=(node "$WCAG_ACTION_PATH/dist/cli.js")
         fi

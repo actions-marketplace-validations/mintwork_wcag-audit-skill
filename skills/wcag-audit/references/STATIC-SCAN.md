@@ -5,8 +5,8 @@ The CLI handles the mechanical checks. Your job in this phase is the review it c
 ## 1. Run the scanner
 
 ```bash
-npx wcag-audit-skill scan src --json -o .wcag-audit/static.json --fail-on none
-npx wcag-audit-skill rules            # what it checks
+npx @mintwork/wcag-audit-skill scan src --json -o .wcag-audit/static.json --fail-on none
+npx @mintwork/wcag-audit-skill rules            # what it checks
 ```
 
 Useful flags: `--ignore storybook,fixtures`, `--rules form-label,button-name`,
