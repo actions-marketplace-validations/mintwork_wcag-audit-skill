@@ -1,7 +1,8 @@
 {
   "name": "wcag-audit-skill",
   "owner": {
-    "name": "wcag-audit-skill contributors"
+    "name": "ranjan-mohanty",
+    "url": "https://github.com/ranjan-mohanty"
   },
   "metadata": {
     "description": "Accessibility (WCAG 2.2) audit-and-fix skill for coding agents",
@@ -11,9 +12,7 @@
     {
       "name": "wcag-audit",
       "description": "Audit web UIs for WCAG 2.2 accessibility failures in phases (static, runtime, verification, fix, report) and fix them",
-      "source": "./",
-      "strict": false,
-      "skills": ["./skills/wcag-audit"]
+      "source": "./"
     }
   ]
 }

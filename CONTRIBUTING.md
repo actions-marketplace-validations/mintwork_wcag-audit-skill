@@ -72,7 +72,7 @@ so every release gets an immutable `vX.Y.Z` tag and the major tag `v0` is moved 
 GitHub Release is published. The action builds the CLI from the tagged source, so tags must point
 at commits where `npm ci && npm run build` works.
 
-1. Update `version` in `package.json`, `.claude-plugin/marketplace.json` and
+1. Update `version` in `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and
    `skills/wcag-audit/SKILL.md` (`metadata.version`); move the `Unreleased` entries in
    `CHANGELOG.md` under the new version; add `docs/release-notes-vX.Y.Z.md`. Commit and push.
 2. `npm ci && npm run typecheck && npm test`, and check `npm pack --dry-run` lists only
