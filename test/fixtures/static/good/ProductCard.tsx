@@ -19,7 +19,7 @@ export function ProductCard({ title, price, onBuy, image, ...rest }: Props & Rec
         <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" /></svg>
       </button>
       <button type="button" onClick={onBuy}>{title}</button>
-      <button type="button"><Icon name="x" /></button>
+      <button type="button"><Icon name="x" label="Remove" /></button>
       <span tabIndex={0} role="note">Focusable</span>
       <Image src="/thumb.png" alt="" />
       {items.length > 0 && <img src="/badge.png" alt="Bestseller" />}

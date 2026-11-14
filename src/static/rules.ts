@@ -5,7 +5,7 @@ import {
   accessibleName,
   ancestor,
   attr,
-  definitelyMissing,
+  containsIconComponent,
   has,
   hasClickHandler,
   hasKeyHandler,
@@ -201,6 +201,7 @@ export const rules: Rule[] = [
         ctx.report({
           el,
           message: "Button has no accessible name; screen readers announce only \"button\".",
+          confidence: containsIconComponent(el) ? "medium" : "high",
           fix: 'Add visible text, or aria-label="<action>" for icon-only buttons (and aria-hidden="true" on the icon).',
         });
       },
@@ -222,6 +223,7 @@ export const rules: Rule[] = [
         ctx.report({
           el,
           message: "Link has no accessible name, so its destination is unknown.",
+          confidence: containsIconComponent(el) ? "medium" : "high",
           fix: 'Add link text, or aria-label="<destination>" for icon links.',
         });
       },

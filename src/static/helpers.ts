@@ -20,11 +20,6 @@ export function isDynamic(el: ElementNode, name: string): boolean {
   return el.attrs.get(name)?.dynamic === true;
 }
 
-/** Missing for sure: not present, and no spread that could supply it. */
-export function definitelyMissing(el: ElementNode, name: string): boolean {
-  return !el.attrs.has(name) && !el.hasSpread;
-}
-
 export function roleOf(el: ElementNode): string | undefined {
   return sv(el, "role")?.trim().split(/\s+/)[0]?.toLowerCase();
 }
@@ -55,6 +50,13 @@ export function nameFromContent(el: ElementNode): Tri {
     }
     if (isAriaHidden(c)) continue;
     if (c.isComponent) {
+      // Icon components (XIcon, IconClose, ChevronSvg) render graphics, not text, unless given a label.
+      if (isIconComponent(c)) {
+        const viaAttrs = nameFromAttrs(c);
+        if (viaAttrs === "yes" || sv(c, "label") || sv(c, "alt")) return "yes";
+        if (viaAttrs === "unknown" || isDynamic(c, "label") || isDynamic(c, "alt")) result = "unknown";
+        continue;
+      }
       result = "unknown";
       continue;
     }
@@ -141,5 +143,18 @@ export function isNativelyFocusable(el: ElementNode): boolean {
   if (["button", "select", "textarea", "summary", "iframe"].includes(el.tag)) return !has(el, "disabled");
   if (el.tag === "input") return sv(el, "type") !== "hidden" && !has(el, "disabled");
   if ((el.tag === "audio" || el.tag === "video") && has(el, "controls")) return true;
+  return false;
+}
+
+const ICON_COMPONENT = /(^Icon[A-Z0-9]?|Icon$|Svg$|^Svg[A-Z])/;
+
+export function isIconComponent(el: ElementNode): boolean {
+  const name = el.tag.split(".").pop() ?? "";
+  return el.isComponent && ICON_COMPONENT.test(name);
+}
+
+/** True if the subtree contains an icon component (used to lower confidence of name findings). */
+export function containsIconComponent(el: ElementNode): boolean {
+  for (const c of walk(el)) if (isIconComponent(c)) return true;
   return false;
 }

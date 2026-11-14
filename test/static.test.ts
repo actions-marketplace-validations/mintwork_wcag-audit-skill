@@ -126,6 +126,13 @@ describe("false-positive guards", () => {
     expect(run("a.vue", `<template><button>{{ label }}</button></template>`)).toEqual([]);
   });
 
+  it("icon components do not count as a name unless labelled", () => {
+    const f = analyzeSource("a.tsx", `const A = () => <button onClick={close}><XIcon /></button>;`);
+    expect(f.map((x) => [x.ruleId, x.confidence])).toEqual([["button-name", "medium"]]);
+    expect(run("a.tsx", `const A = () => <button><XIcon aria-label="Close" /></button>;`)).toEqual([]);
+    expect(run("a.tsx", `const A = () => <a href="/"><Icon name="home" label={t("home")} /></a>;`)).toEqual([]);
+  });
+
   it("does not parse markup in scripts, styles or comments", () => {
     expect(run("a.html", `<script>const x = "<img src=x>";</script><style>a{}</style><!-- <img src=y> -->`)).toEqual([]);
     expect(run("a.tsx", `// <img src="x">\nconst s = "<img src='x'>";`)).toEqual([]);
