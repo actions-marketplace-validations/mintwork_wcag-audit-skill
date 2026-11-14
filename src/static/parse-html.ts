@@ -32,6 +32,8 @@ export function parseMarkup(file: string, source: string, framework: Framework):
 
   let i = 0;
   let ifDepth = 0;
+  /** Astro: end offsets of the {expressions} we are currently inside; markup there renders conditionally or in a loop. */
+  const astroExprEnds: number[] = [];
   // Astro frontmatter (--- ... ---) is TypeScript, not markup.
   if (framework === "astro" && source.startsWith("---")) {
     const end = source.indexOf("\n---", 3);
@@ -56,6 +58,12 @@ export function parseMarkup(file: string, source: string, framework: Framework):
     // Svelte / Astro expressions in text: skip balanced braces so `<` inside is not a tag.
     if (ch === "{" && (framework === "svelte" || framework === "astro")) {
       const end = skipBraces(source, i);
+      // Astro expressions are JSX: {items.map((i) => <li>…</li>)}, {open && <Modal />}. Parse the markup inside.
+      if (framework === "astro" && /<[A-Za-z]/.test(source.slice(i, end))) {
+        astroExprEnds.push(end);
+        i++;
+        continue;
+      }
       if (framework === "svelte") {
         const block = /^\{\s*([#/:])\s*(\w+)/.exec(source.slice(i, i + 20));
         if (block?.[2] === "if") ifDepth += block[1] === "#" ? 1 : block[1] === "/" ? -1 : 0;
@@ -212,7 +220,7 @@ export function parseMarkup(file: string, source: string, framework: Framework):
       line: pos.line,
       column: pos.column,
       openTag: source.slice(tagStart, i),
-      conditional: conditional || undefined,
+      conditional: conditional || insideAstroExpr(astroExprEnds, tagStart) || undefined,
       ifDepth: ifDepth || undefined,
     };
     parent.children.push(el);
@@ -241,6 +249,11 @@ export function parseMarkup(file: string, source: string, framework: Framework):
     // Unclosed elements are legal in HTML (implicit end tags); nothing to report.
   }
   return { file, framework, source, root, parseErrors: errors };
+}
+
+function insideAstroExpr(ends: number[], at: number): boolean {
+  while (ends.length && ends[ends.length - 1]! <= at) ends.pop();
+  return ends.length > 0;
 }
 
 function inForeignContent(el: ElementNode): boolean {

@@ -16,14 +16,14 @@ them manually in Phase 1.
 | `img-alt-meaningful` | 1.1.1 (A) | minor | `alt` is a file name or a placeholder word ("image", "photo", "logo") |
 | `input-image-alt` | 1.1.1, 4.1.2 (A) | critical | `<input type="image">` without `alt` |
 | `svg-img-name` | 1.1.1 (A) | serious | `<svg role="img">` without `<title>` or `aria-label` |
-| `form-label` | 1.3.1, 3.3.2, 4.1.2 (A) | critical | `input` / `select` / `textarea` with no `<label for>`, wrapping `<label>`, `aria-label`, `aria-labelledby` or `title` (placeholder is not a label) |
-| `button-name` | 4.1.2 (A) | critical | `<button>` / `role="button"` with no text, no labelled image, no `aria-label` |
+| `form-label` | 1.3.1, 3.3.2, 4.1.2 (A) | critical | `input` / `select` / `textarea` with no `<label for>`, wrapping `<label>`, `aria-label`, `aria-labelledby` or `title` (placeholder is not a label). Also, at medium confidence, controls inside a `<Field>`-style wrapper **defined in the same file** whose `<label>` neither wraps `{children}` nor has `htmlFor` |
+| `button-name` | 4.1.2 (A) | critical | `<button>` / `role="button"` with no text, no labelled image, no `aria-label`, not named by a wrapping `<label>`. Icons imported from icon libraries (lucide, `@mui/icons-material`, react-icons, heroicons, …) count as icons. At medium confidence: `<Button>` / `<IconButton>` components whose only children are icons and that get no `aria-label` / `title` / `label` prop |
 | `link-name` | 2.4.4, 4.1.2 (A) | serious | `<a href>` with no text or labelled image |
 | `link-text-vague` | 2.4.4 (A) | minor | link text is "click here", "read more", "here", … |
 | `no-div-button` | 2.1.1, 4.1.2 (A) | critical | `div`/`span`/`li`/… with `onClick` / `@click` / `on:click` / `(click)` and no role |
 | `interactive-role-keyboard` | 2.1.1 (A) | serious | element with an interactive role but no `tabindex`, or click handler without key handler |
 | `anchor-is-button` | 2.1.1, 4.1.2 (A) | serious / critical | `<a onClick>` with no `href`, `href="#"` or `javascript:` |
-| `heading-order` | 1.3.1 (A) | moderate | heading level jumps by more than one (h1 → h3) within a file |
+| `heading-order` | 1.3.1 (A) | moderate | heading level jumps by more than one (h1 → h3) within a file (JSX: within one rendered tree, so separate components don't compare) |
 | `empty-heading` | 1.3.1, 2.4.6 (A/AA) | serious | `<h1>`–`<h6>` with no content |
 | `html-lang` | 3.1.1 (A) | serious | `<html>` without `lang`, or an invalid BCP 47 tag |
 | `document-title` | 2.4.2 (A) | serious | full HTML document without a non-empty `<title>` |
@@ -64,7 +64,10 @@ Run by `wcag-audit-skill scan <url>`.
   Escape + Tab.
 - **`focus-visible`** (2.4.7, serious, medium confidence) — compares each focused element's
   outline, box-shadow, border, colors, text decoration and transform against its unfocused
-  state; reports when nothing changes.
+  state. Candidates are then verified with a pixel check: the element is focused by Tab, the
+  area around it is screenshotted focused vs blurred, and any visible change (a ring on
+  `::after`, on a child or sibling, a skip link sliding in) drops the finding. Areas that are
+  animated or off screen can't be checked and are reported at `low` confidence.
 
 ## Not covered by automation
 

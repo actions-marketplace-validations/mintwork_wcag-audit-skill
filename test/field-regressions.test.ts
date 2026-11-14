@@ -182,3 +182,11 @@ describe("interactive-role-keyboard", () => {
     expect(rulesIn("W.svelte", `<div {onclickcapture} bind:this={el}>{@html html}</div>`)).toEqual([]);
   });
 });
+
+describe("Astro expressions", () => {
+  it("parses markup inside {expressions} (they are JSX)", () => {
+    const src = `---\nconst xs = [1];\n---\n<ul>{xs.map((x) => <li><img src={x} /></li>)}</ul>\n{open && <a href="/x">Open</a>}`;
+    expect(lines("L.astro", src, "img-alt")).toEqual([4]);
+    expect(rulesIn("L.astro", src)).not.toContain("link-name");
+  });
+});
