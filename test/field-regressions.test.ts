@@ -108,6 +108,12 @@ export const A = () => <Field id="x" label="x"><input id="x" /></Field>;`;
     for (const src of [wraps, forAttr, imported]) expect(rulesIn("F.jsx", src)).not.toContain("form-label");
   });
 
+  it("checks inputs whose bound type can only be text-like (show ? 'text' : 'password')", () => {
+    expect(rulesIn("P.tsx", `export const P = () => <input type={show ? "text" : "password"} value={v} />;`)).toContain("form-label");
+    expect(rulesIn("Q.tsx", `export const P = () => <input type={kind} value={v} />;`)).toEqual([]);
+    expect(rulesIn("R.tsx", `export const P = () => <input type={x ? "hidden" : "text"} />;`)).toEqual([]);
+  });
+
   it("does not call a label that wraps a different control an orphan", () => {
     const [f] = analyzeSource("x.html", `<select size="5"></select>\n<label>Name: <input></label>`).filter((x) => x.ruleId === "form-label");
     expect(f!.message).not.toMatch(/sits next to/);

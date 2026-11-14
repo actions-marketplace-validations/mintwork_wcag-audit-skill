@@ -88,6 +88,14 @@ function isIconOnlyButtonComponent(el: ElementNode): boolean {
 /** Server-side template placeholders that inject <title> and other head tags at render time. */
 const HEAD_PLACEHOLDER = /%[\w.-]*head[\w.-]*%|<!--\s*[\w-]*head[\w-]*\s*-->|<%|\{\{|\{%|<\?/i;
 
+/** True if a bound type expression can only produce text-like input types, e.g. show ? 'text' : 'password'. */
+function onlyLabelableTypes(expr: string | undefined): boolean {
+  if (!expr) return false;
+  const literals = [...expr.matchAll(/(["'`])([a-z-]*)\1/g)].map((m) => m[2]!);
+  const rest = expr.replace(/(["'`])[a-z-]*\1/g, "").replace(/[\w$.?:!=&|()\s]/g, "");
+  return literals.length >= 2 && rest === "" && literals.every((t) => !INPUT_TYPES_WITHOUT_LABEL.has(t) && t !== "");
+}
+
 /** Labels that wrap a button (or point at it with for=) name it: <label>Back <button><Icon/></button></label>. */
 function labelledByLabel(ctx: RuleContext, el: ElementNode): Tri {
   const id = sv(el, "id");
@@ -255,7 +263,8 @@ export const rules: Rule[] = [
         if (el.hasSpread) return;
         if (el.tag === "input") {
           const type = attr(el, "type");
-          if (type?.dynamic) return;
+          // type={show ? "text" : "password"}: fine to check when every possible value needs a label.
+          if (type?.dynamic && !onlyLabelableTypes(type.expr)) return;
           if (INPUT_TYPES_WITHOUT_LABEL.has((type?.value ?? "text").toLowerCase())) return;
         }
         if (isAriaHidden(el)) return;
