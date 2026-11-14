@@ -1,8 +1,8 @@
 {
   "name": "wcag-audit-skill",
   "owner": {
-    "name": "ranjan-mohanty",
-    "url": "https://github.com/ranjan-mohanty"
+    "name": "mintwork",
+    "url": "https://github.com/mintwork"
   },
   "metadata": {
     "description": "Accessibility (WCAG 2.2) audit-and-fix skill for coding agents",

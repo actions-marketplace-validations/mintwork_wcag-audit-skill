@@ -66,7 +66,7 @@ Regenerate it when the text output changes. Never record real projects or third-
 
 ## Releasing
 
-Versions follow semver. The GitHub Action is consumed as `ranjan-mohanty/wcag-audit-skill@v0`,
+Versions follow semver. The GitHub Action is consumed as `mintwork/wcag-audit-skill@v0`,
 so every release gets an immutable `vX.Y.Z` tag and the major tag `v0` is moved to it. The
 [release workflow](.github/workflows/release.yml) does the npm publish and the tag move when a
 GitHub Release is published. The action builds the CLI from the tagged source, so tags must point
@@ -88,7 +88,7 @@ at commits where `npm ci && npm run build` works.
    outputs needs a new major tag (`v1`): change it in the release workflow first.
 
 **npm auth:** the workflow uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)
-(configure `ranjan-mohanty/wcag-audit-skill` + `release.yml` on the package's npm settings page),
+(configure `mintwork/wcag-audit-skill` + `release.yml` on the package's npm settings page),
 or an `NPM_TOKEN` repository secret as a fallback. A version already on npm is skipped.
 
 ## Commits and PRs

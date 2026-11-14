@@ -59,7 +59,7 @@ jobs:
 
 # Or use the bundled composite action:
 #
-#      - uses: ranjan-mohanty/wcag-audit-skill@v0
+#      - uses: mintwork/wcag-audit-skill@v0
 #        with:
 #          targets: src
 #          fail-on: serious

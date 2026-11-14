@@ -64,10 +64,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ranjan-mohanty/wcag-audit-skill.git"
+    "url": "git+https://github.com/mintwork/wcag-audit-skill.git"
   },
-  "homepage": "https://github.com/ranjan-mohanty/wcag-audit-skill#readme",
+  "homepage": "https://github.com/mintwork/wcag-audit-skill#readme",
   "bugs": {
-    "url": "https://github.com/ranjan-mohanty/wcag-audit-skill/issues"
+    "url": "https://github.com/mintwork/wcag-audit-skill/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

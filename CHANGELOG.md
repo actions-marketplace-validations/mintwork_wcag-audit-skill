@@ -34,7 +34,7 @@ First public release.
   `--fail-on`, `--min-confidence`, `--rules`, `--ignore`, `--level`, `--wait-for` and more.
   Stable finding fingerprints power `verify` (resolved / remaining / introduced).
 - **Suppression comments**: `wcag-audit-ignore <rule>: <reason>`.
-- **GitHub composite action** (`uses: ranjan-mohanty/wcag-audit-skill@v0`) that runs the CLI
+- **GitHub composite action** (`uses: mintwork/wcag-audit-skill@v0`) that runs the CLI
   from the tagged source and uploads SARIF to code scanning, plus an example workflow with
   static and runtime jobs.
 - Colored terminal output honors `NO_COLOR` and `FORCE_COLOR`.
@@ -48,5 +48,5 @@ First public release.
 - Capture-phase handlers recognized; `onClickCapture` containers are not reported as fake buttons.
 - Inputs whose bound `type` is a choice of text-like literals are checked.
 
-[Unreleased]: https://github.com/ranjan-mohanty/wcag-audit-skill/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/ranjan-mohanty/wcag-audit-skill/releases/tag/v0.1.0
+[Unreleased]: https://github.com/mintwork/wcag-audit-skill/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mintwork/wcag-audit-skill/releases/tag/v0.1.0

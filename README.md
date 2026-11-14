@@ -10,14 +10,14 @@ Verified, machine-readable findings. SARIF for GitHub code scanning.
 
 Works with **Claude Code**, **Codex**, **Cursor** and any agent that reads `SKILL.md` or `AGENTS.md`.
 
-[![CI](https://github.com/ranjan-mohanty/wcag-audit-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/ranjan-mohanty/wcag-audit-skill/actions/workflows/ci.yml)
+[![CI](https://github.com/mintwork/wcag-audit-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/mintwork/wcag-audit-skill/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/wcag-audit-skill?color=cb3837&logo=npm)](https://www.npmjs.com/package/wcag-audit-skill)
 [![npm downloads](https://img.shields.io/npm/dm/wcag-audit-skill?color=cb3837)](https://www.npmjs.com/package/wcag-audit-skill)
 ![WCAG 2.2](https://img.shields.io/badge/WCAG-2.2%20AA-1a5fb4)
 ![Node 22+](https://img.shields.io/badge/node-%3E%3D22-339933)
 ![License MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Deps 3](https://img.shields.io/badge/runtime%20deps-3-brightgreen)
-[![GitHub stars](https://img.shields.io/github/stars/ranjan-mohanty/wcag-audit-skill?style=social)](https://github.com/ranjan-mohanty/wcag-audit-skill/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/mintwork/wcag-audit-skill?style=social)](https://github.com/mintwork/wcag-audit-skill/stargazers)
 
 <img src="docs/demo.gif" width="900" alt="Terminal demo. npx wcag-audit-skill scan bad/ProductCard.tsx reports 10 issues, each with severity, rule, WCAG criterion (for example 1.1.1 Non-text Content, 2.1.1 Keyboard, 4.1.2 Name, Role, Value), file and line, evidence and a concrete fix. Scanning a folder of HTML, React, Vue and Svelte files reports 42 issues. Scanning the fixed component reports 0 issues.">
 
@@ -78,8 +78,8 @@ The agent verifies each finding against the source, then applies minimal, explai
 
 | Agent | One line |
 | --- | --- |
-| **Claude Code** | `/plugin marketplace add ranjan-mohanty/wcag-audit-skill` then `/plugin install wcag-audit@wcag-audit-skill` |
-| **Any skills-compatible agent** | `npx skills add https://github.com/ranjan-mohanty/wcag-audit-skill --skill wcag-audit` |
+| **Claude Code** | `/plugin marketplace add mintwork/wcag-audit-skill` then `/plugin install wcag-audit@wcag-audit-skill` |
+| **Any skills-compatible agent** | `npx skills add https://github.com/mintwork/wcag-audit-skill --skill wcag-audit` |
 | **Codex / AGENTS.md agents** | paste [`integrations/codex/AGENTS.md`](integrations/codex/AGENTS.md) into your `AGENTS.md` |
 | **Cursor** | copy [`integrations/cursor/wcag-audit.mdc`](integrations/cursor/wcag-audit.mdc) to `.cursor/rules/` |
 | **CLI only** | `npx wcag-audit-skill scan ./src` |
@@ -180,7 +180,7 @@ Findings appear as PR annotations and under **Security → Code scanning**. Or u
 
 ```yaml
       - uses: actions/checkout@v7
-      - uses: ranjan-mohanty/wcag-audit-skill@v0   # moving major tag; pin @v0.1.0 or a commit SHA for strict reproducibility
+      - uses: mintwork/wcag-audit-skill@v0   # moving major tag; pin @v0.1.0 or a commit SHA for strict reproducibility
         with:
           targets: src
           fail-on: serious
