@@ -174,6 +174,11 @@ describe("interactive-role-keyboard", () => {
   it("counts capture-phase key handlers (onKeyDownCapture / onkeydowncapture)", () => {
     expect(rulesIn("S.tsx", `export const S = () => <div role="slider" tabIndex={0} aria-valuenow={1} onMouseDown={seek} onKeyDownCapture={keys} />;`)).toEqual([]);
     expect(rulesIn("S.svelte", `<div role="button" tabindex="0" onclick={go} onkeydowncapture={keys}>Go</div>`)).toEqual([]);
-    expect(rulesIn("T.tsx", `export const S = () => <div role="button" tabIndex={0} onClickCapture={go}>Go</div>;`)).toContain("interactive-role-keyboard");
+    expect(rulesIn("T.tsx", `export const S = () => <div role="button" tabIndex={0} onClick={go}>Go</div>;`)).toContain("interactive-role-keyboard");
+  });
+
+  it("does not treat a capture-phase click interceptor as a fake button", () => {
+    expect(rulesIn("W.tsx", `export const W = () => <div ref={r} onClickCapture={intercept}><a href="/x">x</a></div>;`)).toEqual([]);
+    expect(rulesIn("W.svelte", `<div {onclickcapture} bind:this={el}>{@html html}</div>`)).toEqual([]);
   });
 });

@@ -154,7 +154,9 @@ export function isIconComponent(el: ElementNode): boolean {
   return el.isComponent && (el.isIcon === true || ICON_COMPONENT.test(name));
 }
 
-const CLICK_HANDLERS = ["onclick", "onmousedown", "onmouseup", "onpointerdown", "onpointerup", "ontap"].flatMap((n) => [n, n + "capture"]);
+// Capture-phase click handlers (onClickCapture) are deliberately not included: on a container they
+// intercept clicks on descendants (links, buttons) rather than making the container a control.
+const CLICK_HANDLERS = ["onclick", "onmousedown", "onmouseup", "onpointerdown", "onpointerup", "ontap"];
 
 /** A handler that only stops propagation (`@click.stop`, `onClick={(e) => e.stopPropagation()}`) does nothing for the user. */
 function isStopOnlyHandler(el: ElementNode, name: string): boolean {
