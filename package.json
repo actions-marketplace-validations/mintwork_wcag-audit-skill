@@ -35,7 +35,8 @@
     "demo:gif": "npm run build && node scripts/demo-gif.mjs",
     "test:watch": "vitest",
     "prepublishOnly": "npm test",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "build:agensi": "node scripts/build-agensi.mjs"
   },
   "keywords": [
     "accessibility",
