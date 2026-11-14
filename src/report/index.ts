@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import { rules } from "../static/rules.js";
 import { type Finding, type ScanResult, SEVERITY_ORDER, type Severity } from "../types.js";
 import { WCAG } from "../wcag.js";
@@ -86,6 +87,12 @@ const SARIF_LEVEL: Record<Severity, "error" | "warning" | "note"> = {
   minor: "note",
 };
 
+/** SARIF wants URIs: repo-relative paths resolve against %SRCROOT%, absolute paths become file:// URIs. */
+function artifactFor(file: string): { uri: string; uriBaseId?: string } {
+  if (file.startsWith("/") || /^[A-Za-z]:\//.test(file)) return { uri: pathToFileURL(file).href };
+  return { uri: file.split("/").map(encodeURIComponent).join("/"), uriBaseId: "%SRCROOT%" };
+}
+
 export function formatSarif(results: ScanResult[]): string {
   const all = results.flatMap((r) => r.findings);
   const ruleIds = [...new Set(all.map((f) => f.ruleId))].sort();
@@ -129,7 +136,7 @@ export function formatSarif(results: ScanResult[]): string {
             f.location.file
               ? {
                   physicalLocation: {
-                    artifactLocation: { uri: f.location.file, uriBaseId: "%SRCROOT%" },
+                    artifactLocation: artifactFor(f.location.file),
                     region: { startLine: f.location.line ?? 1, startColumn: f.location.column ?? 1, snippet: { text: f.evidence } },
                   },
                 }

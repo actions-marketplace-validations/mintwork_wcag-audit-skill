@@ -22,7 +22,7 @@ export const SUPPORTED_EXTENSIONS: Record<string, Framework> = {
   ".mjs": "jsx",
 };
 
-const DEFAULT_IGNORES = new Set(["node_modules", ".git", "dist", "build", "out", ".next", ".nuxt", ".svelte-kit", ".output", "coverage", "vendor", ".turbo", ".cache", "__tests__", "__mocks__", "tests", "e2e", "cypress", "storybook-static", "playwright-report"]);
+const DEFAULT_IGNORES = new Set(["node_modules", ".git", "dist", "build", "out", ".next", ".nuxt", ".svelte-kit", ".output", "coverage", "vendor", ".turbo", ".cache", "__tests__", "__mocks__", "tests", "e2e", "cypress", "storybook-static", "playwright-report", "test", "fixtures", "__fixtures__", "__snapshots__", "venv", "site-packages", "bower_components"]);
 
 export interface StaticOptions {
   /** Directory/file names to skip, in addition to the defaults. */
@@ -156,7 +156,9 @@ export async function scanStatic(target: string, opts: StaticOptions = {}): Prom
   for (const abs of files) {
     const source = await readFile(abs, "utf8");
     if (source.length > 2_000_000) continue;
-    const rel = path.relative(cwd, abs).split(path.sep).join("/") || path.basename(abs);
+    // Outside cwd, a "../../.." path is useless in reports and SARIF; use the absolute path instead.
+    const relative = path.relative(cwd, abs);
+    const rel = (relative.startsWith("..") || path.isAbsolute(relative) ? abs : relative).split(path.sep).join("/") || path.basename(abs);
     findings.push(...analyzeSource(rel, source, opts));
   }
   return {

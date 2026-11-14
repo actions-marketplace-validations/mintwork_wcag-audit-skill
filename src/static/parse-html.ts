@@ -11,6 +11,12 @@ import {
 } from "./ast.js";
 
 const RAW_TEXT = new Set(["script", "style"]);
+/** Escapable raw text: content is text, never markup (a "<html>" typed inside a <textarea> is not an element). */
+const RCDATA = new Set(["textarea", "title"]);
+/** Directives that replace an element's content with something we cannot see statically. */
+const CONTENT_DIRECTIVES = new Set(["set:html", "set:text", "v-html", "v-text", "[innerhtml]", "[textcontent]", "[innertext]", "innerhtml", "textcontent"]);
+/** Server-side template placeholders inside attribute values: lang="%lang%", lang="<%= locale %>", {% … %}. */
+const TEMPLATE_VALUE = /%[\w.-]+%|<%|\{\{|\{%|\$\{/;
 
 /**
  * Tolerant, dependency-free markup parser for HTML, Vue SFCs, Svelte and Astro.
@@ -25,6 +31,7 @@ export function parseMarkup(file: string, source: string, framework: Framework):
   const textHasExpr = framework === "html" ? /\{\{/ : framework === "vue" ? /\{\{/ : /[{}]/;
 
   let i = 0;
+  let ifDepth = 0;
   // Astro frontmatter (--- ... ---) is TypeScript, not markup.
   if (framework === "astro" && source.startsWith("---")) {
     const end = source.indexOf("\n---", 3);
@@ -49,6 +56,10 @@ export function parseMarkup(file: string, source: string, framework: Framework):
     // Svelte / Astro expressions in text: skip balanced braces so `<` inside is not a tag.
     if (ch === "{" && (framework === "svelte" || framework === "astro")) {
       const end = skipBraces(source, i);
+      if (framework === "svelte") {
+        const block = /^\{\s*([#/:])\s*(\w+)/.exec(source.slice(i, i + 20));
+        if (block?.[2] === "if") ifDepth += block[1] === "#" ? 1 : block[1] === "/" ? -1 : 0;
+      }
       i = end;
       continue;
     }
@@ -103,6 +114,8 @@ export function parseMarkup(file: string, source: string, framework: Framework):
     const attrs = new Map<string, Attr>();
     let hasSpread = false;
     let selfClosing = false;
+    let fillsContent = false;
+    let conditional = false;
 
     while (i < n) {
       while (i < n && /\s/.test(source[i]!)) i++;
@@ -167,10 +180,13 @@ export function parseMarkup(file: string, source: string, framework: Framework):
         hasSpread = true;
         continue;
       }
+      if (CONTENT_DIRECTIVES.has(rawName.toLowerCase())) fillsContent = true;
+      if (/^v-(if|else-if|else|show)$/.test(rawName) || rawName === "*ngIf" || rawName === "x-if" || rawName === "x-show") conditional = true;
       const norm = normalizeAttrName(rawName, framework);
       if (!norm) continue;
+      const expr = value === null ? source.slice(j + 1, i - 1) : value;
       if (norm.forceDynamic) dynamic = true;
-      if (value !== null && (/\{\{/.test(value) || ((framework === "svelte" || framework === "astro") && /[{}]/.test(value)))) {
+      if (value !== null && (TEMPLATE_VALUE.test(value) || ((framework === "svelte" || framework === "astro") && /[{}]/.test(value)))) {
         dynamic = true;
       }
       attrs.set(norm.name, {
@@ -178,6 +194,7 @@ export function parseMarkup(file: string, source: string, framework: Framework):
         rawName,
         value: dynamic ? null : decodeEntities(value ?? ""),
         dynamic,
+        expr: dynamic ? expr : undefined,
       });
     }
 
@@ -195,12 +212,24 @@ export function parseMarkup(file: string, source: string, framework: Framework):
       line: pos.line,
       column: pos.column,
       openTag: source.slice(tagStart, i),
+      conditional: conditional || undefined,
+      ifDepth: ifDepth || undefined,
     };
     parent.children.push(el);
+    if (fillsContent) el.children.push({ type: "text", text: "", dynamic: true });
 
-    if (RAW_TEXT.has(tag) && !selfClosing) {
+    // In plain HTML, "/>" on a non-void element is ignored (<button/>Save</button> contains "Save"),
+    // except in foreign content (<svg>, <math>) where it really self-closes.
+    if (selfClosing && framework === "html" && !VOID_ELEMENTS.has(tag) && !inForeignContent(el)) selfClosing = false;
+
+    if ((RAW_TEXT.has(tag) || RCDATA.has(tag)) && !selfClosing) {
       const close = source.toLowerCase().indexOf(`</${tag}`, i);
-      i = close === -1 ? n : close;
+      const end = close === -1 ? n : close;
+      if (RCDATA.has(tag)) {
+        const text = source.slice(i, end);
+        if (text.trim()) el.children.push({ type: "text", text: decodeEntities(text), dynamic: textHasExpr.test(text) });
+      }
+      i = end;
       textStart = i;
       continue;
     }
@@ -212,6 +241,11 @@ export function parseMarkup(file: string, source: string, framework: Framework):
     // Unclosed elements are legal in HTML (implicit end tags); nothing to report.
   }
   return { file, framework, source, root, parseErrors: errors };
+}
+
+function inForeignContent(el: ElementNode): boolean {
+  for (let e: ElementNode | null = el; e; e = e.parent) if (e.tag === "svg" || e.tag === "math") return true;
+  return false;
 }
 
 function normalizeTag(raw: string): string {

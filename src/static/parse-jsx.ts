@@ -12,6 +12,10 @@ const COMPONENT_ALIASES: Record<string, string> = {
   NavLink: "a",
 };
 
+/** Packages whose exports are icon components (render a graphic, never text). Subpaths included. */
+const ICON_PACKAGE =
+  /^(lucide-react|lucide-preact|lucide-solid|@mui\/icons-material|@material-ui\/icons|react-icons|@heroicons\/react|@radix-ui\/react-icons|@tabler\/icons-react|react-feather|@phosphor-icons\/react|phosphor-react|@fortawesome\/react-fontawesome|@iconify\/react|@ant-design\/icons|@primer\/octicons-react|react-bootstrap-icons|@carbon\/icons-react|@chakra-ui\/icons|@remixicon\/react|@hugeicons\/react|~icons|virtual:icons)(\/|$)/;
+
 /** Parses .jsx/.tsx/.js files with Babel and extracts every JSX tree. */
 export function parseJsx(file: string, source: string): ParsedDocument {
   const root = createRoot();
@@ -31,6 +35,15 @@ export function parseJsx(file: string, source: string): ParsedDocument {
   }
   for (const e of ast.errors ?? []) errors.push(String(e.message ?? e));
 
+  const iconNames = new Set<string>();
+  for (const stmt of ast.program.body ?? []) {
+    if (stmt.type !== "ImportDeclaration" || !ICON_PACKAGE.test(String(stmt.source?.value ?? ""))) continue;
+    for (const spec of stmt.specifiers ?? []) if (spec.local?.name) iconNames.add(spec.local.name);
+  }
+
+  const components = new Map<string, ElementNode[]>();
+  let scope: string | undefined;
+
   const visit = (node: AnyNode, parent: ElementNode) => {
     if (!node || typeof node !== "object") return;
     if (Array.isArray(node)) {
@@ -38,18 +51,41 @@ export function parseJsx(file: string, source: string): ParsedDocument {
       return;
     }
     if (node.type === "JSXElement") {
-      parent.children.push(convertElement(node, parent));
+      const el = convertElement(node, parent);
+      parent.children.push(el);
+      if (parent === root && scope && /^[A-Z]/.test(scope)) {
+        const list = components.get(scope) ?? [];
+        list.push(el);
+        components.set(scope, list);
+      }
       return;
     }
     if (node.type === "JSXFragment") {
-      for (const c of convertChildren(node.children, parent)) parent.children.push(c);
+      for (const c of convertChildren(node.children, parent)) {
+        parent.children.push(c);
+        if (c.type === "element" && parent === root && scope && /^[A-Z]/.test(scope)) {
+          const list = components.get(scope) ?? [];
+          list.push(c);
+          components.set(scope, list);
+        }
+      }
       return;
     }
+    // Track the enclosing named function / component so per-component checks don't bleed across components.
+    const named =
+      (node.type === "FunctionDeclaration" || node.type === "ClassDeclaration") && node.id?.name
+        ? node.id.name
+        : node.type === "VariableDeclarator" && node.id?.type === "Identifier" && node.init && typeof node.init === "object"
+          ? node.id.name
+          : undefined;
+    const saved = scope;
+    if (named) scope = named;
     for (const key of Object.keys(node)) {
       if (key === "loc" || key === "start" || key === "end" || key === "leadingComments" || key === "trailingComments" || key === "extra") continue;
       const v = node[key];
       if (v && typeof v === "object") visit(v, parent);
     }
+    scope = saved;
   };
 
   const convertElement = (node: AnyNode, parent: ElementNode): ElementNode => {
@@ -70,12 +106,15 @@ export function parseJsx(file: string, source: string): ParsedDocument {
       const { value, dynamic } = attrValue(a.value);
       let name = norm.name;
       if (alias === "a" && name === "to") name = "href";
-      attrs.set(name, { name, rawName, value, dynamic });
+      const expr = dynamic && a.value?.type === "JSXExpressionContainer" ? source.slice(a.value.expression.start, a.value.expression.end) : undefined;
+      attrs.set(name, { name, rawName, value, dynamic, expr });
     }
     const el: ElementNode = {
       type: "element",
       tag: intrinsic ? rawTag.toLowerCase() : alias ?? rawTag,
       isComponent: !intrinsic && !alias,
+      isIcon: !intrinsic && iconNames.has(rawTag.split(".")[0]!),
+      scope,
       attrs,
       hasSpread,
       children: [],
@@ -85,6 +124,8 @@ export function parseJsx(file: string, source: string): ParsedDocument {
       openTag: source.slice(opening.start, opening.end),
     };
     el.children = convertChildren(node.children, el);
+    // dangerouslySetInnerHTML fills the element with content we cannot see.
+    if (attrs.has("dangerouslysetinnerhtml")) el.children.push({ type: "text", text: "", dynamic: true });
     return el;
   };
 
@@ -114,11 +155,15 @@ export function parseJsx(file: string, source: string): ParsedDocument {
             break;
           }
           // Arbitrary expression: may render text. Collect nested JSX as children.
-          out.push({ type: "text", text: "", dynamic: true });
+          out.push({ type: "text", text: "", dynamic: true, expr: source.slice(e.start, e.end) });
           const holder = { ...parent, children: [] as Node[] };
           visit(e, holder);
+          const conditional = e.type === "LogicalExpression" || e.type === "ConditionalExpression";
           for (const child of holder.children) {
-            if (child.type === "element") child.parent = parent;
+            if (child.type === "element") {
+              child.parent = parent;
+              if (conditional) child.conditional = true;
+            }
             out.push(child);
           }
           break;
@@ -132,7 +177,7 @@ export function parseJsx(file: string, source: string): ParsedDocument {
   };
 
   visit(ast.program, root);
-  return { file, framework: "jsx", source, root, parseErrors: errors };
+  return { file, framework: "jsx", source, root, parseErrors: errors, components };
 }
 
 function jsxName(n: AnyNode): string {

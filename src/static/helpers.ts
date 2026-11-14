@@ -124,7 +124,7 @@ export function* walk(el: ElementNode): Generator<ElementNode> {
 }
 
 export function hasClickHandler(el: ElementNode): boolean {
-  return ["onclick", "onmousedown", "onmouseup", "onpointerdown", "onpointerup", "ontap"].some((n) => el.attrs.has(n));
+  return CLICK_HANDLERS.some((n) => el.attrs.has(n));
 }
 
 export function hasKeyHandler(el: ElementNode): boolean {
@@ -150,7 +150,55 @@ const ICON_COMPONENT = /(^Icon[A-Z0-9]?|Icon$|Svg$|^Svg[A-Z])/;
 
 export function isIconComponent(el: ElementNode): boolean {
   const name = el.tag.split(".").pop() ?? "";
-  return el.isComponent && ICON_COMPONENT.test(name);
+  return el.isComponent && (el.isIcon === true || ICON_COMPONENT.test(name));
+}
+
+const CLICK_HANDLERS = ["onclick", "onmousedown", "onmouseup", "onpointerdown", "onpointerup", "ontap"];
+
+/** A handler that only stops propagation (`@click.stop`, `onClick={(e) => e.stopPropagation()}`) does nothing for the user. */
+function isStopOnlyHandler(el: ElementNode, name: string): boolean {
+  const a = el.attrs.get(name);
+  if (!a) return false;
+  const expr = (a.expr ?? "").trim();
+  // Vue: @click.stop / @click.stop.prevent with no handler body.
+  if (/\.(stop|prevent|self)\b/.test(a.rawName) && expr === "") return true;
+  // (e) => e.stopPropagation()   /   e => { e.stopPropagation(); e.preventDefault(); }
+  const m = /^(?:async\s*)?\(?\s*([A-Za-z_$][\w$]*)\s*(?::\s*[\w.<>]+)?\s*\)?\s*=>\s*\{?([\s\S]*?)\}?$/.exec(expr);
+  if (!m) return false;
+  const v = m[1]!;
+  const stmts = m[2]!.split(/[;\n]/).map((x) => x.trim()).filter(Boolean);
+  const call = new RegExp(`^${v.replace(/\$/g, "\\$")}\\.(stopPropagation|preventDefault|stopImmediatePropagation)\\(\\)$`);
+  return stmts.length > 0 && stmts.every((x) => call.test(x)) && stmts.some((x) => /stop/.test(x));
+}
+
+/** True if every click-like handler on the element only stops propagation. */
+export function onlyStopsPropagation(el: ElementNode): boolean {
+  const present = CLICK_HANDLERS.filter((n) => el.attrs.has(n));
+  return present.length > 0 && present.every((n) => isStopOnlyHandler(el, n));
+}
+
+/** True if the subtree contains a native control. Clicks on it bubble to an ancestor handler, so keyboard users can still activate it. */
+export function containsNativeControl(el: ElementNode): boolean {
+  const base = el.ifDepth ?? 0;
+  const always = (c: ElementNode): boolean => {
+    for (let e: ElementNode | null = c; e && e !== el; e = e.parent) if (e.conditional) return false;
+    return (c.ifDepth ?? 0) <= base;
+  };
+  for (const c of walk(el)) {
+    if (c.isComponent || !always(c)) continue;
+    if (c.tag === "button" || c.tag === "select" || c.tag === "textarea" || c.tag === "summary") return true;
+    if (c.tag === "a" && has(c, "href")) return true;
+    if (c.tag === "input" && sv(c, "type") !== "hidden") return true;
+  }
+  return false;
+}
+
+/** react-aria wrappers that inject tabIndex and keyboard handlers into their only child. */
+const PROP_INJECTORS = /^(Pressable|Focusable|PressResponder|FocusableProvider)$/;
+
+export function receivesInjectedInteraction(el: ElementNode): boolean {
+  const p = el.parent;
+  return !!p && p.isComponent && PROP_INJECTORS.test(p.tag.split(".").pop() ?? "");
 }
 
 /** True if the subtree contains an icon component (used to lower confidence of name findings). */

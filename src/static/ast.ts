@@ -14,6 +14,8 @@ export interface Attr {
   value: string | null;
   /** True when the value is bound to an expression whose value we cannot know statically. */
   dynamic: boolean;
+  /** Source text of the bound expression, when the parser has it (handler bodies, etc.). */
+  expr?: string;
 }
 
 export interface ElementNode {
@@ -22,6 +24,14 @@ export interface ElementNode {
   tag: string;
   /** True for framework components (<MyButton>, <motion.div>) rather than HTML elements. */
   isComponent: boolean;
+  /** Component imported from a known icon library (lucide-react, @mui/icons-material, …). */
+  isIcon?: boolean;
+  /** JSX only: name of the enclosing top-level component/function, used to scope per-component checks. */
+  scope?: string;
+  /** Rendered only under a condition: v-if / v-show, {cond && <x/>}, {a ? <x/> : <y/>}. */
+  conditional?: boolean;
+  /** Svelte/Astro: number of enclosing {#if} blocks; a descendant with a higher depth is conditional relative to this element. */
+  ifDepth?: number;
   attrs: Map<string, Attr>;
   /** Element has a spread / v-bind="obj" / {...props}: unknown attributes may be present. */
   hasSpread: boolean;
@@ -39,6 +49,8 @@ export interface TextNode {
   text: string;
   /** True when this text is (or contains) an expression: {name}, {{ msg }}, etc. */
   dynamic: boolean;
+  /** Source of the expression, when known (JSX). */
+  expr?: string;
 }
 
 export type Node = ElementNode | TextNode;
@@ -50,6 +62,8 @@ export interface ParsedDocument {
   root: ElementNode;
   /** Problems the parser hit; the file is still scanned best-effort. */
   parseErrors: string[];
+  /** JSX only: top-level JSX trees of each component defined in this file, by name. */
+  components?: Map<string, ElementNode[]>;
 }
 
 export function createRoot(): ElementNode {

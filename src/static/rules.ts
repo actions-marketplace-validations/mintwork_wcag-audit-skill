@@ -1,19 +1,24 @@
 import type { Confidence, Severity } from "../types.js";
 import { ARIA_ATTRIBUTES, ARIA_ROLES, INTERACTIVE_ROLES, NATIVE_INTERACTIVE, NON_INTERACTIVE_CONTAINERS, closest } from "./aria.js";
 import type { ElementNode, ParsedDocument } from "./ast.js";
+import type { Tri } from "./helpers.js";
 import {
   accessibleName,
   ancestor,
   attr,
   containsIconComponent,
+  containsNativeControl,
   has,
   hasClickHandler,
   hasKeyHandler,
   isAriaHidden,
   isDynamic,
+  isIconComponent,
   isNativelyFocusable,
   nameFromAttrs,
   nameFromContent,
+  onlyStopsPropagation,
+  receivesInjectedInteraction,
   roleOf,
   sv,
   tabIndexValue,
@@ -54,7 +59,89 @@ export interface Rule {
 const INPUT_TYPES_WITHOUT_LABEL = new Set(["hidden", "submit", "reset", "button", "image"]);
 const VAGUE_ALT = /^(image|img|photo|picture|graphic|icon|logo|banner|spacer|untitled|placeholder|screenshot|\s*)$/i;
 const FILENAME_ALT = /\.(png|jpe?g|gif|svg|webp|avif|bmp)$/i;
-const VAGUE_LINK = /^(click here|here|read more|more|learn more|link|this|go)\.?$/i;
+// Not "go": it is far more often the language or a product name ("Go", "Go modules") than a vague verb.
+const VAGUE_LINK = /^(click here|here|read more|more|learn more|link|this)\.?$/i;
+/** Button components (<Button>, <IconButton>, <Mui.IconButton>) are buttons in every UI library we know. */
+const BUTTON_COMPONENT = /^(Icon)?Button$/;
+/** Props through which a button component may receive its accessible name. */
+const NAME_PROP = /^(aria-label|aria-labelledby|title|label|tooltip|text|alt|name|description|sr-?text|screenreadertext|accessibilitylabel|asChild|aschild|render|as|component)$/i;
+
+/** <IconButton><CloseIcon /></IconButton>: a button component whose only children are icons, with no name prop. */
+function isIconOnlyButtonComponent(el: ElementNode): boolean {
+  if (!el.isComponent || !BUTTON_COMPONENT.test(el.tag.split(".").pop() ?? "") || el.hasSpread) return false;
+  if ([...el.attrs.keys()].some((k) => NAME_PROP.test(k))) return false;
+  const kids = el.children;
+  if (!kids.length) return false;
+  for (const c of kids) {
+    if (c.type === "text") return false; // text, or an expression that may render text
+    if (isAriaHidden(c)) continue;
+    if (isIconComponent(c)) {
+      if (nameFromAttrs(c) !== "no" || has(c, "label") || has(c, "title") || has(c, "alt")) return false;
+      continue;
+    }
+    if (c.tag === "svg" && accessibleName(c) === "no") continue;
+    return false;
+  }
+  return true;
+}
+
+/** Server-side template placeholders that inject <title> and other head tags at render time. */
+const HEAD_PLACEHOLDER = /%[\w.-]*head[\w.-]*%|<!--\s*[\w-]*head[\w-]*\s*-->|<%|\{\{|\{%|<\?/i;
+
+/** Labels that wrap a button (or point at it with for=) name it: <label>Back <button><Icon/></button></label>. */
+function labelledByLabel(ctx: RuleContext, el: ElementNode): Tri {
+  const id = sv(el, "id");
+  if (id && ctx.labelTargets.has(id)) return "yes";
+  const wrap = ancestor(el, (p) => p.tag === "label");
+  if (!wrap) return "no";
+  // The label's own text (excluding the button's subtree) names the button.
+  let result: Tri = "no";
+  for (const c of wrap.children) {
+    if (c === el) continue;
+    if (c.type === "text") {
+      if (c.dynamic) result = "unknown";
+      else if (c.text.trim()) return "yes";
+      continue;
+    }
+    if (walkContains(c, el)) continue;
+    const n = accessibleName(c);
+    if (n === "yes") return "yes";
+    if (n === "unknown") result = "unknown";
+  }
+  return result;
+}
+
+function walkContains(root: ElementNode, target: ElementNode): boolean {
+  for (let e: ElementNode | null = target; e; e = e.parent) if (e === root) return true;
+  return false;
+}
+
+/**
+ * For a form control inside <Field>/<FormLabel>-style wrapper defined in this same file: does that
+ * wrapper associate its <label> with the control? "no" only when we can see every <label> it renders
+ * and none has for/htmlFor or wraps {children}.
+ */
+function wrapperAssociatesLabel(ctx: RuleContext, wrapper: ElementNode): Tri {
+  const defs = ctx.doc.components?.get(wrapper.tag);
+  if (!defs?.length) return "unknown";
+  const labels: ElementNode[] = [];
+  let rendersChildren = false;
+  for (const d of defs) {
+    for (const e of [d, ...walk(d)]) {
+      if (e.tag === "label") labels.push(e);
+      // The real <label> may come from another component (<FormLabel>, <Label {...props}>).
+      if (e.isComponent && e.tag !== wrapper.tag && /label|field|control|form/i.test(e.tag)) return "unknown";
+      if (e.children.some((c) => c.type === "text" && c.dynamic && /\bchildren\b/.test(c.expr ?? ""))) rendersChildren = true;
+    }
+  }
+  if (!labels.length || !rendersChildren) return "unknown";
+  for (const l of labels) {
+    if (l.hasSpread || has(l, "for")) return "unknown";
+    if (l.children.some((c) => c.type === "text" && c.dynamic && /\bchildren\b/.test(c.expr ?? ""))) return "unknown";
+    for (const e of walk(l)) if (e.children.some((c) => c.type === "text" && c.dynamic && /\bchildren\b/.test(c.expr ?? ""))) return "unknown";
+  }
+  return "no";
+}
 
 /**
  * Plain HTML elements that are empty but carry an id / data-* hook are often filled by script.
@@ -173,13 +260,29 @@ export const rules: Rule[] = [
         }
         if (isAriaHidden(el)) return;
         if (nameFromAttrs(el) !== "no") return;
-        if (ancestor(el, (p) => p.tag === "label" || p.isComponent && /label|field/i.test(p.tag))) return;
+        const wrapper = ancestor(el, (p) => p.tag === "label" || (p.isComponent && /label|field/i.test(p.tag)));
+        let viaWrapper = false;
+        if (wrapper) {
+          if (wrapper.tag === "label" || wrapperAssociatesLabel(ctx, wrapper) !== "no") return;
+          viaWrapper = true;
+        }
         const id = attr(el, "id");
         if (id?.dynamic && (ctx.hasDynamicLabelTarget || ctx.labelTargets.size > 0)) return;
         if (id?.value && ctx.labelTargets.has(id.value)) return;
         if (id?.value && ctx.hasDynamicLabelTarget) return;
         const placeholder = has(el, "placeholder");
-        const orphanLabel = el.parent?.children.some((c) => c.type === "element" && c.tag === "label" && !has(c, "for"));
+        const orphanLabel = el.parent?.children.some(
+          (c) => c.type === "element" && c.tag === "label" && !has(c, "for") && ![...walk(c)].some((d) => ["input", "select", "textarea"].includes(d.tag)),
+        );
+        if (viaWrapper) {
+          ctx.report({
+            el,
+            confidence: "medium",
+            message: `<${wrapper!.tag}> (defined in this file) renders a <label> that is neither wrapping this control nor pointing at it with for/htmlFor, so the control has no programmatic label.`,
+            fix: `In <${wrapper!.tag}>, give the control an id (e.g. from useId()) and render <label htmlFor={id}>, or wrap {children} inside the <label>. Or add aria-label here.`,
+          });
+          return;
+        }
         ctx.report({
           el,
           message: orphanLabel
@@ -204,6 +307,15 @@ export const rules: Rule[] = [
     },
     create: (ctx) => ({
       element(el) {
+        if (isIconOnlyButtonComponent(el)) {
+          ctx.report({
+            el,
+            confidence: "medium",
+            message: `<${el.tag}> contains only an icon and no text or aria-label, so it is likely announced as just "button".`,
+            fix: `Add aria-label="<action>" to <${el.tag}> (or visually hidden text inside it), and aria-hidden="true" on the icon.`,
+          });
+          return;
+        }
         const isButton = el.tag === "button" || (!el.isComponent && roleOf(el) === "button");
         const isInputButton = el.tag === "input" && sv(el, "type") === "button";
         if (!isButton && !isInputButton) return;
@@ -211,6 +323,7 @@ export const rules: Rule[] = [
         if (isInputButton) {
           if (has(el, "value") || nameFromAttrs(el) !== "no") return;
         } else if (accessibleName(el) !== "no") return;
+        if (labelledByLabel(ctx, el) !== "no") return;
         ctx.report({
           el,
           message: "Button has no accessible name; screen readers announce only \"button\".",
@@ -279,7 +392,12 @@ export const rules: Rule[] = [
         if (el.isComponent || !NON_INTERACTIVE_CONTAINERS.has(el.tag)) return;
         if (!hasClickHandler(el)) return;
         if (has(el, "role") || isAriaHidden(el)) return;
-        if (el.hasSpread) return;
+        if (el.hasSpread || receivesInjectedInteraction(el)) return;
+        // e.g. <div class="dialog" @click.stop>: the handler only keeps clicks from reaching a backdrop.
+        if (onlyStopsPropagation(el)) return;
+        // <li onClick={run}><button>Run</button></li>: keyboard activation of the inner control bubbles here.
+        // Only for click handlers (not drag/pointer gestures), and only for controls that are always rendered.
+        if (has(el, "onclick") && containsNativeControl(el)) return;
         const focusable = tabIndexValue(el) !== undefined && tabIndexValue(el)! >= 0;
         ctx.report({
           el,
@@ -303,6 +421,7 @@ export const rules: Rule[] = [
         const role = roleOf(el);
         if (!role || !INTERACTIVE_ROLES.has(role)) return;
         if (el.hasSpread || isAriaHidden(el) || sv(el, "aria-disabled") === "true") return;
+        if (receivesInjectedInteraction(el)) return;
         const tab = attr(el, "tabindex");
         const notFocusable = !tab;
         const noKeys = hasClickHandler(el) && !hasKeyHandler(el);
@@ -355,8 +474,19 @@ export const rules: Rule[] = [
     },
     create: (ctx) => {
       let prev = 0;
+      let tree: ElementNode | undefined;
       return {
         element(el) {
+          // JSX files hold many separately rendered trees (one per component / return). Compare headings
+          // only within one tree, so <h1> in <Page> and <h3> in <Card> are not read as a skipped level.
+          if (ctx.doc.framework === "jsx") {
+            let top = el;
+            while (top.parent && top.parent.parent) top = top.parent;
+            if (top !== tree) {
+              tree = top;
+              prev = 0;
+            }
+          }
           let level = 0;
           const m = /^h([1-6])$/.exec(el.tag);
           if (m) level = Number(m[1]);
@@ -433,6 +563,10 @@ export const rules: Rule[] = [
         },
         done() {
           if (!html || ctx.doc.framework !== "html") return;
+          const head = [...walk(html)].find((e) => e.tag === "head");
+          const headSrc = head ? ctx.doc.source.slice(ctx.doc.source.indexOf(head.openTag), ctx.doc.source.search(/<\/head\s*>/i)) : ctx.doc.source;
+          // %sveltekit.head%, <!--app-head-->, <%= htmlWebpackPlugin.options.title %>: the title is injected at build/render time.
+          if (HEAD_PLACEHOLDER.test(headSrc)) return;
           for (const e of walk(html)) {
             if (e.tag === "title") {
               if (nameFromContent(e) !== "no") return;
@@ -629,8 +763,12 @@ export const rules: Rule[] = [
     create: (ctx) => ({
       element(el) {
         if (!has(el, "autofocus") || sv(el, "autofocus") === "false") return;
-        // Dialogs may (and should) set initial focus.
-        if (ancestor(el, (p) => p.tag === "dialog" || roleOf(p) === "dialog" || roleOf(p) === "alertdialog" || (p.isComponent && /Dialog|Modal|Drawer|Popover|Sheet/.test(p.tag)))) return;
+        // On a component, autoFocus is that component's API (it may focus a canvas, a dialog, or nothing).
+        if (el.isComponent) return;
+        // Dialogs and popups may (and should) set initial focus.
+        const popup = (p: ElementNode) =>
+          p.tag === "dialog" || ["dialog", "alertdialog", "menu", "listbox"].includes(roleOf(p) ?? "") || (p.isComponent && /Dialog|Modal|Drawer|Popover|Sheet|Menu|Dropdown|Command|Combobox|Popup|Overlay/.test(p.tag));
+        if (ancestor(el, popup)) return;
         ctx.report({
           el,
           message: "autofocus moves focus on load, disorienting keyboard and screen-reader users.",
