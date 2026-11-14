@@ -72,16 +72,14 @@ The agent verifies each finding against the source, then applies minimal, explai
 
 | Agent | One line |
 | --- | --- |
-| **Claude Code** | `/plugin marketplace add OWNER/wcag-audit-skill` then `/plugin install wcag-audit@wcag-audit-skill` |
-| **Any skills-compatible agent** | `npx skills add https://github.com/OWNER/wcag-audit-skill --skill wcag-audit` |
+| **Claude Code** | `/plugin marketplace add ranjan-mohanty/wcag-audit-skill` then `/plugin install wcag-audit@wcag-audit-skill` |
+| **Any skills-compatible agent** | `npx skills add https://github.com/ranjan-mohanty/wcag-audit-skill --skill wcag-audit` |
 | **Codex / AGENTS.md agents** | paste [`integrations/codex/AGENTS.md`](integrations/codex/AGENTS.md) into your `AGENTS.md` |
 | **Cursor** | copy [`integrations/cursor/wcag-audit.mdc`](integrations/cursor/wcag-audit.mdc) to `.cursor/rules/` |
 | **CLI only** | `npx wcag-audit-skill scan ./src` |
 | **CI** | [GitHub Action](#github-action) → findings in code scanning |
 
 Manual Claude Code install: `cp -r skills/wcag-audit ~/.claude/skills/` (more in [integrations/claude-code](integrations/claude-code/README.md)).
-
-> Replace `OWNER` with the GitHub owner of this repository.
 
 ## How it works
 
@@ -172,7 +170,7 @@ jobs:
         with: { sarif_file: wcag.sarif, category: wcag-audit }
 ```
 
-Findings appear as PR annotations and under **Security → Code scanning**. A runtime job (start app → scan URLs) and the bundled composite action (`uses: OWNER/wcag-audit-skill@v0`) are in [`examples/github-action.yml`](examples/github-action.yml) and [`action.yml`](action.yml).
+Findings appear as PR annotations and under **Security → Code scanning**. A runtime job (start app → scan URLs) and the bundled composite action (`uses: ranjan-mohanty/wcag-audit-skill@v0`) are in [`examples/github-action.yml`](examples/github-action.yml) and [`action.yml`](action.yml).
 
 ## Rules
 

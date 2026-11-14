@@ -56,5 +56,13 @@
     "@types/node": "^20.19.0",
     "typescript": "^5.9.0",
     "vitest": "^4.1.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ranjan-mohanty/wcag-audit-skill.git"
+  },
+  "homepage": "https://github.com/ranjan-mohanty/wcag-audit-skill#readme",
+  "bugs": {
+    "url": "https://github.com/ranjan-mohanty/wcag-audit-skill/issues"
   }
 }

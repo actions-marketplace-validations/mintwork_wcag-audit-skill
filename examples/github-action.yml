@@ -57,9 +57,9 @@ jobs:
           name: wcag-runtime-report
           path: wcag-runtime.json
 
-# Or use the bundled composite action (replace OWNER):
+# Or use the bundled composite action:
 #
-#      - uses: OWNER/wcag-audit-skill@v0
+#      - uses: ranjan-mohanty/wcag-audit-skill@v0
 #        with:
 #          targets: src
 #          fail-on: serious
