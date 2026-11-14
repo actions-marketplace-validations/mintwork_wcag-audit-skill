@@ -15,6 +15,8 @@ Works with **Claude Code**, **Codex**, **Cursor** and any agent that reads `SKIL
 ![License MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Deps 3](https://img.shields.io/badge/runtime%20deps-3-brightgreen)
 
+<img src="docs/demo.gif" width="900" alt="Terminal demo. npx wcag-audit-skill scan bad/ProductCard.tsx reports 10 issues, each with severity, rule, WCAG criterion (for example 1.1.1 Non-text Content, 2.1.1 Keyboard, 4.1.2 Name, Role, Value), file and line, evidence and a concrete fix. Scanning a folder of HTML, React, Vue and Svelte files reports 42 issues. Scanning the fixed component reports 0 issues.">
+
 </div>
 
 ---
@@ -170,7 +172,17 @@ jobs:
         with: { sarif_file: wcag.sarif, category: wcag-audit }
 ```
 
-Findings appear as PR annotations and under **Security → Code scanning**. A runtime job (start app → scan URLs) and the bundled composite action (`uses: ranjan-mohanty/wcag-audit-skill@v0`) are in [`examples/github-action.yml`](examples/github-action.yml) and [`action.yml`](action.yml).
+Findings appear as PR annotations and under **Security → Code scanning**. Or use the bundled composite action, which runs the CLI from the tagged release and uploads the SARIF for you:
+
+```yaml
+      - uses: actions/checkout@v4
+      - uses: ranjan-mohanty/wcag-audit-skill@v0   # moving major tag; pin @v0.1.0 or a commit SHA for strict reproducibility
+        with:
+          targets: src
+          fail-on: serious
+```
+
+Inputs: `targets`, `fail-on`, `sarif-file`, `upload-sarif`, `args`, `version` (empty = the action's own ref; set an npm version to run the published package). A runtime job (start app → scan URLs) is in [`examples/github-action.yml`](examples/github-action.yml); the action itself is [`action.yml`](action.yml).
 
 ## Rules
 
@@ -260,6 +272,7 @@ npm install
 npm test          # builds, then runs vitest (static, CLI, reporters, verify, runtime in Chromium)
 node dist/cli.js scan test/fixtures/static/bad
 node dist/cli.js scan test/fixtures/runtime/bad.html --runtime
+npm run demo:gif  # regenerate docs/demo.gif (needs Google Chrome and ffmpeg)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to add a rule.

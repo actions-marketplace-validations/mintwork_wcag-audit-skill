@@ -1,5 +1,5 @@
 name: "WCAG Audit"
-description: "Scan HTML/JSX/Vue/Svelte source (and optionally a running URL) for WCAG 2.2 accessibility failures; upload SARIF to code scanning."
+description: "Scan HTML/JSX/Vue/Svelte/Astro source (and optionally a running URL) for WCAG 2.2 accessibility failures; upload SARIF to code scanning."
 author: "wcag-audit-skill contributors"
 branding:
   icon: "eye"
@@ -18,7 +18,7 @@ inputs:
     required: false
     default: "wcag-audit.sarif"
   upload-sarif:
-    description: "Upload the SARIF file to GitHub code scanning (needs security-events: write)"
+    description: "Upload the SARIF file to GitHub code scanning (needs security-events: write; private repositories need GitHub Advanced Security)"
     required: false
     default: "true"
   args:
@@ -26,27 +26,59 @@ inputs:
     required: false
     default: ""
   version:
-    description: "wcag-audit-skill npm version to run"
+    description: "Leave empty to run the CLI from this action's own ref (e.g. @v0). Set an npm version (e.g. 0.1.0 or latest) to run that published package instead."
     required: false
-    default: "latest"
+    default: ""
+outputs:
+  exit-code:
+    description: "CLI exit code: 0 clean, 1 findings at or above fail-on, 2 usage or runtime error"
+    value: ${{ steps.scan.outputs.exit-code }}
+  sarif-file:
+    description: "Path of the SARIF report"
+    value: ${{ inputs.sarif-file }}
 runs:
   using: "composite"
   steps:
+    - name: Build wcag-audit-skill from the action ref
+      if: ${{ inputs.version == '' }}
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        if [ ! -f dist/cli.js ]; then
+          npm ci --no-audit --no-fund --loglevel=error
+          npm run build --silent
+        fi
     - name: Run wcag-audit-skill
       id: scan
       shell: bash
+      env:
+        WCAG_TARGETS: ${{ inputs.targets }}
+        WCAG_FAIL_ON: ${{ inputs.fail-on }}
+        WCAG_SARIF: ${{ inputs.sarif-file }}
+        WCAG_ARGS: ${{ inputs.args }}
+        WCAG_VERSION: ${{ inputs.version }}
+        WCAG_ACTION_PATH: ${{ github.action_path }}
       run: |
         set +e
-        npx --yes "wcag-audit-skill@${{ inputs.version }}" scan ${{ inputs.targets }} \
-          --sarif -o "${{ inputs.sarif-file }}" --fail-on "${{ inputs.fail-on }}" ${{ inputs.args }}
+        if [ -n "$WCAG_VERSION" ]; then
+          cmd=(npx --yes "wcag-audit-skill@$WCAG_VERSION")
+        else
+          cmd=(node "$WCAG_ACTION_PATH/dist/cli.js")
+        fi
+        # Targets and args are word-split on purpose (space-separated lists).
+        # shellcheck disable=SC2086
+        "${cmd[@]}" scan $WCAG_TARGETS --sarif -o "$WCAG_SARIF" --fail-on "$WCAG_FAIL_ON" $WCAG_ARGS
         code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        if [ "$code" -ge 2 ]; then echo "::error::wcag-audit-skill exited with $code"; fi
     - name: Upload SARIF
-      if: ${{ inputs.upload-sarif == 'true' && always() }}
+      if: ${{ always() && inputs.upload-sarif == 'true' && hashFiles(inputs.sarif-file) != '' }}
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ inputs.sarif-file }}
         category: wcag-audit
     - name: Enforce threshold
       shell: bash
-      run: exit ${{ steps.scan.outputs.exit-code }}
+      env:
+        WCAG_EXIT: ${{ steps.scan.outputs.exit-code }}
+      run: exit "${WCAG_EXIT:-2}"

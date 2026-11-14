@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { type RuntimeOptions, scanUrl } from "./runtime/scan-url.js";
+import type { RuntimeOptions } from "./runtime/scan-url.js";
 import { type StaticOptions, scanStatic } from "./static/analyze.js";
 import type { Confidence, Finding, ScanResult } from "./types.js";
 
@@ -20,6 +20,8 @@ export function isUrl(target: string): boolean {
 /** Scan a path (static) or URL (runtime). Local .html files can be scanned in a browser with `runtime: true`. */
 export async function scan(target: string, opts: ScanOptions = {}): Promise<ScanResult> {
   let result: ScanResult;
+  // Loaded lazily so static scans never touch axe-core or playwright-core.
+  const scanUrl = async (url: string, o: ScanOptions) => (await import("./runtime/scan-url.js")).scanUrl(url, o);
   if (isUrl(target)) {
     result = await scanUrl(target, opts);
   } else if (opts.runtime) {

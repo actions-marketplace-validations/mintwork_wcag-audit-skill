@@ -56,6 +56,41 @@ test/fixtures/       known-bad and clean files for every parser
 `name` matches the directory, `description` ≤ 1024 chars, body < 500 lines. Put detail in
 `references/`. `test/skill.test.ts` checks this and that every linked file exists.
 
+## Demo GIF
+
+`docs/demo.gif` is generated, not recorded: `npm run demo:gif` builds the CLI, runs it on
+the synthetic fixtures in `test/fixtures/static`, renders the real ANSI output in a terminal
+page with Playwright (Google Chrome) and encodes it with ffmpeg (`FFMPEG=/path/to/ffmpeg`
+to override). The script is `scripts/demo-gif.mjs`; it fails if the GIF exceeds 5 MB.
+Regenerate it when the text output changes. Never record real projects or third-party sites.
+
+## Releasing
+
+Versions follow semver. The GitHub Action is consumed as `ranjan-mohanty/wcag-audit-skill@v0`,
+so every release gets an immutable `vX.Y.Z` tag **and** the major tag `v0` is moved to it
+(the standard GitHub Actions convention). The action builds the CLI from the tagged source,
+so tags must point at commits where `npm ci && npm run build` works.
+
+1. Update `version` in `package.json`, `.claude-plugin/marketplace.json` and
+   `skills/wcag-audit/SKILL.md` (`metadata.version`); move the `Unreleased` entries in
+   `CHANGELOG.md` under the new version; add `docs/release-notes-vX.Y.Z.md`.
+2. `npm ci && npm run typecheck && npm test`, and check `npm pack --dry-run` lists only
+   `dist/`, `skills/`, `integrations/`, `.claude-plugin/`, README, CHANGELOG and LICENSE.
+3. Commit, then tag and move the major tag:
+
+   ```bash
+   git tag -a v0.2.0 -m "v0.2.0"
+   git tag -fa v0 -m "v0 -> v0.2.0" v0.2.0^{}   # move the major tag to the same commit
+   git push origin main v0.2.0
+   git push origin v0 --force                  # only the moving major tag is ever force-pushed
+   ```
+
+   Verify with `git rev-parse v0^{commit} v0.2.0^{commit}` (both must print the same SHA).
+   Never move or delete a `vX.Y.Z` tag once pushed. A breaking change to action inputs or
+   outputs starts a new major tag (`v1`) and leaves `v0` where it is.
+4. Publish to npm (`npm publish`; `prepublishOnly` builds and runs the tests) and create the
+   GitHub Release from the release notes.
+
 ## Commits and PRs
 
 - Small, focused PRs with tests. `npm test` must pass.

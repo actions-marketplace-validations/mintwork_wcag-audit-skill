@@ -6,3 +6,4 @@ coverage/
 *.sarif
 wcag-report.*
 .vitest/
+*.tgz

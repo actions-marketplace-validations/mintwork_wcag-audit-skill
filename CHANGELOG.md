@@ -1,0 +1,52 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
+[Semantic Versioning](https://semver.org/). While the major version is 0, minor releases may
+change rule behavior or output fields; the JSON finding format is kept backward compatible
+within a minor line.
+
+## [Unreleased]
+
+## [0.1.0] - 2026-11-14
+
+First public release.
+
+### Added
+
+- **Agent skill** `skills/wcag-audit` ([Agent Skills spec](https://agentskills.io/specification)):
+  a phased procedure (static scan, runtime scan, adversarial verification, minimal fixes,
+  report) with references for rules, fix patterns, verification, reporting and a manual
+  checklist, a JSON schema for `findings.json` and a validator script.
+- **Install paths** for Claude Code (plugin marketplace in `.claude-plugin/`), any
+  skills-compatible agent (`npx skills add`), Codex and other `AGENTS.md` agents, and Cursor rules.
+- **Static scanner** for HTML, JSX/TSX, Vue, Svelte and Astro (including markup inside Astro
+  `{expressions}`) with 24 rules mapped to WCAG 2.2 success criteria: image and SVG
+  alternatives, form labels, button and link names, fake buttons (`<div onClick>`,
+  `@click`, `on:click`, `(click)`), heading order, `lang`, `title`, positive `tabindex`,
+  iframe titles, focusable content in `aria-hidden`, invalid ARIA roles and attributes with
+  suggestions, viewport zoom, captions, distracting elements and autofocus.
+- **Runtime scanner**: opens pages in a real Chromium (Playwright Chromium, Chrome or Edge,
+  auto-detected) and runs axe-core WCAG A/AA rules (AAA and best-practice opt-in), plus
+  Tab traversal for keyboard traps (2.1.2) and invisible focus (2.4.7, pixel-verified).
+  Violations are re-run and dropped if they do not reproduce.
+- **CLI** `wcag-audit-skill scan | verify | rules` with text, JSON and SARIF 2.1.0 output,
+  `--fail-on`, `--min-confidence`, `--rules`, `--ignore`, `--level`, `--wait-for` and more.
+  Stable finding fingerprints power `verify` (resolved / remaining / introduced).
+- **Suppression comments**: `wcag-audit-ignore <rule>: <reason>`.
+- **GitHub composite action** (`uses: ranjan-mohanty/wcag-audit-skill@v0`) that runs the CLI
+  from the tagged source and uploads SARIF to code scanning, plus an example workflow with
+  static and runtime jobs.
+- Colored terminal output honors `NO_COLOR` and `FORCE_COLOR`.
+- `npm run demo:gif` regenerates the README demo from the bundled fixtures.
+
+### Precision work before release
+
+- Conservative by default: spread props, bound values and components that may render text
+  are assumed to be handled; heuristic findings are `confidence: "medium"`.
+- Icon components from common icon libraries are treated as non-text when computing names.
+- Capture-phase handlers recognized; `onClickCapture` containers are not reported as fake buttons.
+- Inputs whose bound `type` is a choice of text-like literals are checked.
+
+[Unreleased]: https://github.com/ranjan-mohanty/wcag-audit-skill/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ranjan-mohanty/wcag-audit-skill/releases/tag/v0.1.0

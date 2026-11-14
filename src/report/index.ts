@@ -3,7 +3,12 @@ import { rules } from "../static/rules.js";
 import { type Finding, type ScanResult, SEVERITY_ORDER, type Severity } from "../types.js";
 import { WCAG } from "../wcag.js";
 
-const useColor = () => process.stdout.isTTY && !process.env.NO_COLOR;
+const useColor = () => {
+  const env = process.env;
+  if (env.NO_COLOR) return false;
+  if (env.FORCE_COLOR !== undefined) return env.FORCE_COLOR !== "0" && env.FORCE_COLOR !== "false";
+  return Boolean(process.stdout.isTTY);
+};
 const c = (code: string, s: string) => (useColor() ? `\x1b[${code}m${s}\x1b[0m` : s);
 const SEV_COLOR: Record<Severity, string> = { critical: "1;31", serious: "31", moderate: "33", minor: "36" };
 
@@ -58,8 +63,8 @@ export function formatText(results: ScanResult[]): string {
   const n = counts(all);
   const discarded = results.reduce((s, r) => s + r.discarded, 0);
   lines.push(
-    `${c("1", `${all.length} issue${all.length === 1 ? "" : "s"}`)}: ` +
-      (Object.keys(n) as Severity[]).map((s) => c(SEV_COLOR[s], `${n[s]} ${s}`)).join(", ") +
+    `${c(all.length ? "1" : "1;32", `${all.length} issue${all.length === 1 ? "" : "s"}`)}: ` +
+      (Object.keys(n) as Severity[]).map((s) => c(n[s] ? SEV_COLOR[s] : "2", `${n[s]} ${s}`)).join(", ") +
       (discarded ? c("2", ` (${discarded} unverified result${discarded === 1 ? "" : "s"} discarded)`) : ""),
   );
   lines.push(c("2", "Automated checks catch roughly 30–50% of WCAG issues. Manual and assistive-technology testing is still required."));

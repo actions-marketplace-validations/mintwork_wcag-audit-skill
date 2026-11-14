@@ -34,3 +34,33 @@ jobs:
         with:
           name: fixtures-sarif
           path: fixtures.sarif
+
+  action:
+    name: Composite action (uses ./)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Clean fixtures pass
+        uses: ./
+        with:
+          targets: test/fixtures/static/good
+          fail-on: minor
+          upload-sarif: "false"
+      - name: Bad fixtures fail
+        id: bad
+        continue-on-error: true
+        uses: ./
+        with:
+          targets: test/fixtures/static/bad
+          sarif-file: bad.sarif
+          upload-sarif: "false"
+      - name: Check results
+        env:
+          EXIT_CODE: ${{ steps.bad.outputs.exit-code }}
+          OUTCOME: ${{ steps.bad.outcome }}
+        run: |
+          test "$EXIT_CODE" = "1" && test "$OUTCOME" = "failure"
+          node -e 'const s=require("./bad.sarif"); if (!s.runs[0].results.length) process.exit(1)'
