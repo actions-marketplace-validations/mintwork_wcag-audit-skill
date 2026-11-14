@@ -22,7 +22,7 @@ export const SUPPORTED_EXTENSIONS: Record<string, Framework> = {
   ".mjs": "jsx",
 };
 
-const DEFAULT_IGNORES = new Set(["node_modules", ".git", "dist", "build", "out", ".next", ".nuxt", ".svelte-kit", ".output", "coverage", "vendor", ".turbo", ".cache"]);
+const DEFAULT_IGNORES = new Set(["node_modules", ".git", "dist", "build", "out", ".next", ".nuxt", ".svelte-kit", ".output", "coverage", "vendor", ".turbo", ".cache", "__tests__", "__mocks__", "tests", "e2e", "cypress", "storybook-static", "playwright-report"]);
 
 export interface StaticOptions {
   /** Directory/file names to skip, in addition to the defaults. */

@@ -149,7 +149,7 @@ function jsxName(n: AnyNode): string {
 }
 
 function attrValue(v: AnyNode): { value: string | null; dynamic: boolean } {
-  if (v == null) return { value: "", dynamic: false }; // <input disabled />
+  if (v == null) return { value: "true", dynamic: false }; // <input disabled /> === disabled={true}
   if (v.type === "StringLiteral") return { value: v.value, dynamic: false };
   if (v.type === "JSXExpressionContainer") {
     const e = v.expression;

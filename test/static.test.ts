@@ -160,6 +160,26 @@ describe("false-positive guards", () => {
     expect(run("a.html", `<dialog open><input aria-label="Name" autofocus></dialog>`)).toEqual([]);
   });
 
+  it("skips live-stream videos and lowers confidence for script-filled HTML", () => {
+    expect(run("a.html", `<video autoplay></video>`)).toEqual([]);
+    const f = analyzeSource("a.html", `<a href="#" id="clear-all"></a><button></button>`);
+    expect(f.map((x) => [x.ruleId, x.confidence])).toEqual([
+      ["button-name", "high"],
+      ["link-name", "medium"],
+    ]);
+  });
+
+  it("explains unassociated sibling labels", () => {
+    const [f] = analyzeSource("a.jsx", `const A = () => <div><label className="x">Region</label><input type="text" /></div>;`);
+    expect(f!.ruleId).toBe("form-label");
+    expect(f!.message).toMatch(/not associated/);
+  });
+
+  it("treats valueless JSX attributes as true and allows autofocus in dialog components", () => {
+    expect(run("a.tsx", `const A = () => <div className="overlay" onClick={close} aria-hidden />;`)).toEqual([]);
+    expect(run("a.tsx", `const A = () => <Dialog open><Button autoFocus>OK</Button></Dialog>;`)).toEqual([]);
+  });
+
   it("allows aria role fallback lists", () => {
     expect(run("a.html", `<div role="switch checkbox" tabindex="0" aria-checked="false">x</div>`)).toEqual([]);
   });

@@ -56,6 +56,16 @@ const VAGUE_ALT = /^(image|img|photo|picture|graphic|icon|logo|banner|spacer|unt
 const FILENAME_ALT = /\.(png|jpe?g|gif|svg|webp|avif|bmp)$/i;
 const VAGUE_LINK = /^(click here|here|read more|more|learn more|link|this|go)\.?$/i;
 
+/**
+ * Plain HTML elements that are empty but carry an id / data-* hook are often filled by script.
+ * Keep reporting them (most are real), but at medium confidence so verification checks the runtime.
+ */
+function emptyContentConfidence(ctx: RuleContext, el: ElementNode, base: Confidence = "high"): Confidence {
+  if (ctx.doc.framework !== "html") return base;
+  const scripted = has(el, "id") || [...el.attrs.keys()].some((k) => k.startsWith("data-"));
+  return scripted ? "medium" : base;
+}
+
 export const rules: Rule[] = [
   {
     meta: {
@@ -169,11 +179,14 @@ export const rules: Rule[] = [
         if (id?.value && ctx.labelTargets.has(id.value)) return;
         if (id?.value && ctx.hasDynamicLabelTarget) return;
         const placeholder = has(el, "placeholder");
+        const orphanLabel = el.parent?.children.some((c) => c.type === "element" && c.tag === "label" && !has(c, "for"));
         ctx.report({
           el,
-          message: placeholder
-            ? "Control relies on placeholder text, which disappears on input and is not a reliable label."
-            : "Form control has no programmatic label.",
+          message: orphanLabel
+            ? "A <label> sits next to this control but is not associated with it (no for/htmlFor), so screen readers announce an unlabeled field."
+            : placeholder
+              ? "Control relies on placeholder text, which disappears on input and is not a reliable label."
+              : "Form control has no programmatic label.",
           fix: id?.value
             ? `Add <label for="${id.value}">…</label>, or aria-label="…".`
             : 'Wrap it in <label>Text <input …></label>, or give it an id and add <label for="that-id">, or aria-label="…".',
@@ -201,7 +214,7 @@ export const rules: Rule[] = [
         ctx.report({
           el,
           message: "Button has no accessible name; screen readers announce only \"button\".",
-          confidence: containsIconComponent(el) ? "medium" : "high",
+          confidence: emptyContentConfidence(ctx, el, containsIconComponent(el) ? "medium" : "high"),
           fix: 'Add visible text, or aria-label="<action>" for icon-only buttons (and aria-hidden="true" on the icon).',
         });
       },
@@ -223,7 +236,7 @@ export const rules: Rule[] = [
         ctx.report({
           el,
           message: "Link has no accessible name, so its destination is unknown.",
-          confidence: containsIconComponent(el) ? "medium" : "high",
+          confidence: emptyContentConfidence(ctx, el, containsIconComponent(el) ? "medium" : "high"),
           fix: 'Add link text, or aria-label="<destination>" for icon links.',
         });
       },
@@ -374,7 +387,12 @@ export const rules: Rule[] = [
       element(el) {
         if (!/^h[1-6]$/.test(el.tag) || isAriaHidden(el)) return;
         if (accessibleName(el) !== "no") return;
-        ctx.report({ el, message: "Heading is empty.", fix: "Add text to the heading, or remove it if it is only used for spacing." });
+        ctx.report({
+          el,
+          message: "Heading is empty.",
+          fix: "Add text to the heading, or remove it if it is only used for spacing.",
+          confidence: emptyContentConfidence(ctx, el),
+        });
       },
     }),
   },
@@ -571,6 +589,8 @@ export const rules: Rule[] = [
     create: (ctx) => ({
       element(el) {
         if (el.tag !== "video" || has(el, "muted") || el.hasSpread) return;
+        // No src and no <source>: almost always a live stream (getUserMedia) or set by script; 1.2.2 covers prerecorded media.
+        if (!has(el, "src") && !el.children.some((c) => c.type === "element" && c.tag === "source")) return;
         const tracks = el.children.filter((c): c is ElementNode => c.type === "element" && c.tag === "track");
         if (el.children.some((c) => c.type === "element" && c.isComponent) || el.children.some((c) => c.type === "text" && c.dynamic)) return;
         if (tracks.some((t) => isDynamic(t, "kind") || ["captions", "subtitles"].includes(sv(t, "kind") ?? ""))) return;
@@ -609,7 +629,8 @@ export const rules: Rule[] = [
     create: (ctx) => ({
       element(el) {
         if (!has(el, "autofocus") || sv(el, "autofocus") === "false") return;
-        if (ancestor(el, (p) => p.tag === "dialog" || roleOf(p) === "dialog")) return; // dialogs may set initial focus
+        // Dialogs may (and should) set initial focus.
+        if (ancestor(el, (p) => p.tag === "dialog" || roleOf(p) === "dialog" || roleOf(p) === "alertdialog" || (p.isComponent && /Dialog|Modal|Drawer|Popover|Sheet/.test(p.tag)))) return;
         ctx.report({
           el,
           message: "autofocus moves focus on load, disorienting keyboard and screen-reader users.",
