@@ -1,0 +1,65 @@
+# .github/workflows/accessibility.yml
+# Copy into your repository. Findings show up under Security → Code scanning and as PR annotations.
+name: Accessibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write # upload SARIF
+
+jobs:
+  static:
+    name: WCAG static scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Scan source
+        run: npx --yes wcag-audit-skill scan src --sarif -o wcag-audit.sarif --fail-on serious
+      - name: Upload to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: wcag-audit.sarif
+          category: wcag-audit-static
+
+  runtime:
+    name: WCAG runtime scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Start app
+        run: |
+          npm run start -- --port 3000 &
+          npx --yes wait-on http://localhost:3000 --timeout 60000
+      # ubuntu-latest ships Google Chrome, which wcag-audit-skill auto-detects.
+      - name: Scan pages in a real browser
+        run: >
+          npx --yes wcag-audit-skill scan
+          http://localhost:3000/
+          http://localhost:3000/login
+          --json -o wcag-runtime.json --fail-on serious
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wcag-runtime-report
+          path: wcag-runtime.json
+
+# Or use the bundled composite action (replace OWNER):
+#
+#      - uses: OWNER/wcag-audit-skill@v0
+#        with:
+#          targets: src
+#          fail-on: serious

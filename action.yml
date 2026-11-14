@@ -1,0 +1,52 @@
+name: "WCAG Audit"
+description: "Scan HTML/JSX/Vue/Svelte source (and optionally a running URL) for WCAG 2.2 accessibility failures; upload SARIF to code scanning."
+author: "wcag-audit-skill contributors"
+branding:
+  icon: "eye"
+  color: "blue"
+inputs:
+  targets:
+    description: "Space-separated paths and/or URLs to scan"
+    required: false
+    default: "."
+  fail-on:
+    description: "Fail the step at this severity or above: critical, serious, moderate, minor, none"
+    required: false
+    default: "serious"
+  sarif-file:
+    description: "Where to write the SARIF report"
+    required: false
+    default: "wcag-audit.sarif"
+  upload-sarif:
+    description: "Upload the SARIF file to GitHub code scanning (needs security-events: write)"
+    required: false
+    default: "true"
+  args:
+    description: "Extra CLI arguments, e.g. --ignore storybook --level AA"
+    required: false
+    default: ""
+  version:
+    description: "wcag-audit-skill npm version to run"
+    required: false
+    default: "latest"
+runs:
+  using: "composite"
+  steps:
+    - name: Run wcag-audit-skill
+      id: scan
+      shell: bash
+      run: |
+        set +e
+        npx --yes "wcag-audit-skill@${{ inputs.version }}" scan ${{ inputs.targets }} \
+          --sarif -o "${{ inputs.sarif-file }}" --fail-on "${{ inputs.fail-on }}" ${{ inputs.args }}
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+    - name: Upload SARIF
+      if: ${{ inputs.upload-sarif == 'true' && always() }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        category: wcag-audit
+    - name: Enforce threshold
+      shell: bash
+      run: exit ${{ steps.scan.outputs.exit-code }}
