@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Store – Example</title>
+</head>
+<body>
+  <h1>Store</h1>
+  <h2>Featured</h2>
+  <img src="/hero.png" alt="Three ceramic mugs on a wooden shelf">
+  <img src="/divider.png" alt="">
+  <label for="email">Email</label>
+  <input id="email" type="email" placeholder="you@example.com">
+  <label>Name <input type="text" name="name"></label>
+  <button type="button" onclick="buy()">Buy now</button>
+  <button type="button" aria-label="Close"><svg class="icon" aria-hidden="true"></svg></button>
+  <a href="/cart">Cart</a>
+  <button type="button" onclick="openMenu()">Menu</button>
+  <iframe src="https://example.com/embed" title="Product demo"></iframe>
+  <div role="button" tabindex="0" onclick="toggle()" onkeydown="toggleKey(event)">Toggle</div>
+  <video src="/promo.mp4" controls>
+    <track kind="captions" src="/promo.vtt" srclang="en" label="English">
+  </video>
+  <div aria-hidden="true"><span>decorative</span></div>
+  <svg role="img" aria-label="Status: online" viewBox="0 0 10 10"><circle r="4"></circle></svg>
+  <h3>Details</h3>
+  <a href="/docs">Read the setup guide</a>
+  <input type="image" src="/go.png" alt="Search">
+  <script>
+    // tags inside scripts are ignored: "<img src=x>" "<div onclick=x>"
+    const html = "<img src='x.png'>";
+  </script>
+</body>
+</html>
