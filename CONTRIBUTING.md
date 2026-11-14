@@ -87,9 +87,10 @@ at commits where `npm ci && npm run build` works.
    Never move or delete a `vX.Y.Z` tag once pushed. A breaking change to action inputs or
    outputs needs a new major tag (`v1`): change it in the release workflow first.
 
-**npm auth:** the workflow uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)
-(configure `mintwork/wcag-audit-skill` + `release.yml` on the package's npm settings page),
-or an `NPM_TOKEN` repository secret as a fallback. A version already on npm is skipped.
+**npm auth:** [trusted publishing](https://docs.npmjs.com/trusted-publishers) only; no npm token
+is stored in the repository. npm accepts publishes of this package only from `release.yml` in
+`mintwork/wcag-audit-skill` (set under the package's Settings → Trusted Publisher on npmjs.com). A version
+already on npm is skipped, and manual runs of the workflow are dry runs.
 
 ## Commits and PRs
 
