@@ -146,7 +146,7 @@ Runtime findings carry `location.url` + `location.selector` and `"verified": tru
 
 ### False positives, kept low on purpose
 
-Static rules skip anything they can't know: spread props (`{...props}`, `v-bind="obj"`), bound values (`alt={t('logo')}`, `:alt`), and components that may render text. Heuristic findings are marked `confidence: "medium"`. Suppress a reviewed one with a reason:
+Static rules skip anything they can't know: spread props (`{...props}`, `v-bind="obj"`), bound values (`alt={t('logo')}`, `:alt`), and components that may render text. Heuristic findings are marked `confidence: "medium"` — for example `<IconButton><CloseIcon /></IconButton>` with no `aria-label`, or a control inside a same-file `<Field>` wrapper whose `<label>` isn't associated. Icons imported from icon libraries (lucide, `@mui/icons-material`, react-icons, …) are recognized as icons. Suppress a reviewed finding with a reason:
 
 ```html
 <!-- wcag-audit-ignore img-alt: tracking pixel, hidden from AT -->
@@ -225,8 +225,24 @@ Full reference: [`skills/wcag-audit/references/RULES.md`](skills/wcag-audit/refe
 
 Automated tools find roughly 30–50% of WCAG failures. This skill finds more because the agent reviews components and states, but it **cannot certify conformance**. Reports always list what still needs a human: a screen-reader pass, zoom/reflow, captions accuracy, cognitive review. See [`MANUAL-CHECKLIST.md`](skills/wcag-audit/references/MANUAL-CHECKLIST.md).
 
+## Field-tested
+
+Measured on 10 real codebases (React/Next, Vue, SvelteKit, Astro, plain-HTML extensions; 6,880 files) and 7 live pages, with findings hand-checked against the source or DOM:
+
+| | |
+| --- | --- |
+| Static precision, hand-reviewed sample | **91%** true positives on a fresh 43-finding sample, 0 false positives, the rest debatable (e.g. backdrop click handlers). Earlier version: 70% on a 315-finding sample, 15% clear false positives |
+| Speed | ~3,300 files/s (a 3,563-file TSX monorepo in 1.1 s on a laptop) |
+| Robustness | 0 crashes on 6,880 files and 20,640 truncated-file fuzz runs; SARIF validates against the OASIS 2.1.0 schema |
+| Runtime (axe) | same violations as raw axe-core on every page; the re-run drops transient nodes (e.g. a toast removed mid-scan) |
+| `focus-visible` | pixel-verified: 4 medium-confidence findings, all real (the style-only check had reported 64, 4 of them real) |
+| `keyboard-trap` | 0 findings on 7 real pages (no false alarms) |
+
+Known gaps: `.mdx` files are not scanned; labels and names that come from component props in another file are invisible to the static scan (the runtime scan sees them).
+
 ## Roadmap
 
+- [ ] MDX files, and resolving labels across files (imported `<Field>`, MUI `<TextField label>`)
 - [ ] Rules: `autocomplete-valid` (1.3.5), `label-in-name` (2.5.3), table headers, duplicate ids, Tailwind contrast from class names
 - [ ] CSS analysis: `outline: none` without `:focus-visible` replacement (2.4.7) in source
 - [ ] Angular template files (`.component.html` works today; inline `template:` strings next)
