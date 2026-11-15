@@ -109,6 +109,8 @@ npx @mintwork/wcag-audit-skill rules                             # list rules + 
 | `--fail-on <sev>` | exit 1 at `critical`/`serious`/`moderate`/`minor` (default `minor`) or `none` |
 | `--min-confidence <c>` | drop findings below `high`/`medium` |
 | `--rules a,b` / `--ignore dir,dir` | select rules / skip directories |
+| `--fix` / `--dry-run` | fix mechanical findings in place, always printing the diff first; `--dry-run` only prints it (see [Fixing](#fixing-mechanical-findings)) |
+| `--lang <code>` | with `--fix`: add `lang="<code>"` to `<html>` that has none |
 | `--baseline <file>` | report and fail only on findings not in the baseline (see [Baseline](#baseline-fail-only-on-new-findings)) |
 | `--write-baseline` | record the current findings in the `--baseline` file (default `.wcag-audit/baseline.json`) and exit 0 |
 | `--level A\|AA\|AAA` | runtime WCAG level (default `AA`) |
@@ -142,6 +144,15 @@ Exit codes: `0` clean, `1` findings at or above `--fail-on`, `2` usage or runtim
 ```
 
 Runtime findings carry `location.url` + `location.selector` and `"verified": true`. IDs are stable fingerprints (rule + file + element), so they survive line moves and power `verify`.
+
+### Fixing mechanical findings
+
+```bash
+npx @mintwork/wcag-audit-skill scan src --dry-run            # print the diff, write nothing
+npx @mintwork/wcag-audit-skill scan src --fix --lang en      # print the diff, apply it, report what is left
+```
+
+`--fix` handles the findings with exactly one correct answer: `html-lang` (`lang="en_US"` → `en-US`, `"English"` → `en`; a missing `lang` only with `--lang`, never guessed), `meta-viewport-zoom` (drops `user-scalable=no` and `maximum-scale` below 2, keeps the rest) and `aria-attr-valid` typos (`aria-lable` → `aria-label`, only when one attribute is the obvious match and it isn't already set). The diff is always printed before anything is written (to stderr when stdout carries `--json` / `--sarif`), files keep their line count, and suppressed findings are left alone. Everything else needs judgment: that's the agent's Phase 4.
 
 ### Baseline: fail only on new findings
 
@@ -276,7 +287,7 @@ Known gaps: form labels are followed into imported project components, but other
 - [ ] Multi-state runtime scans from a config file (open modal, submit empty form, dark mode, 320px)
 - [ ] Authenticated scans via Playwright storage state
 - [ ] Map runtime selectors back to source files automatically (React DevTools / source maps)
-- [ ] `--fix` for mechanical rules (`html-lang`, `meta-viewport-zoom`, `aria-attr-valid` typos)
+- [x] `--fix` / `--dry-run` for mechanical rules (`html-lang`, `meta-viewport-zoom`, `aria-attr-valid` typos)
 - [x] Baseline file to fail CI only on new findings (`--baseline`, `--write-baseline`, action input `baseline`)
 - [ ] Storybook integration: scan every story
 

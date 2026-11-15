@@ -10,6 +10,10 @@ within a minor line.
 
 ### Added
 
+- **`--fix` and `--dry-run`** for mechanical findings: `html-lang` (repairs `en_US`, `English`; adds a missing
+  `lang` only with `--lang <code>`), `meta-viewport-zoom` (drops `user-scalable=no` / low `maximum-scale`) and
+  unambiguous `aria-attr-valid` typos. A unified diff is always printed before files are written; `--dry-run`
+  prints it and writes nothing. Exported as `planFixes`, `writeFixes`, `fixSource` and `unifiedDiff`.
 - **Labels resolved across files** (`form-label`): components imported from the project are looked up through
   relative imports, tsconfig / jsconfig `paths` and workspace packages. A thin wrapper that forwards its props to
   one `<input>` / `<select>` / `<textarea>` (shadcn's `<Input>`) is checked at each call site, and an imported
