@@ -156,7 +156,7 @@ Matching uses the finding `id` (rule + file + opening tag), so moved lines stay 
 
 ### False positives, kept low on purpose
 
-Static rules skip anything they can't know: spread props (`{...props}`, `v-bind="obj"`), bound values (`alt={t('logo')}`, `:alt`), and components that may render text. Heuristic findings are marked `confidence: "medium"` — for example `<IconButton><CloseIcon /></IconButton>` with no `aria-label`, or a control inside a same-file `<Field>` wrapper whose `<label>` isn't associated. Icons imported from icon libraries (lucide, `@mui/icons-material`, react-icons, …) are recognized as icons. Suppress a reviewed finding with a reason:
+Static rules skip anything they can't know: spread props (`{...props}`, `v-bind="obj"`), bound values (`alt={t('logo')}`, `:alt`), and components that may render text. Heuristic findings are marked `confidence: "medium"` — for example `<IconButton><CloseIcon /></IconButton>` with no `aria-label`, or a control inside a `<Field>` wrapper whose `<label>` isn't associated. Components imported from other files of the project are resolved (relative imports, tsconfig `paths` such as `@/components/…`, workspace packages): a thin `<Input {...props} />` wrapper is checked like `<input>` at each call site, and design-system inputs (MUI `<TextField>`, antd `<Input>`, Mantine, Chakra, React Aria, HeroUI, React Bootstrap, Fluent, Headless UI) are checked for their label prop or wrapper (`<Form.Item label>`, `<FormControl>`). Icons imported from icon libraries (lucide, `@mui/icons-material`, react-icons, …) are recognized as icons. Suppress a reviewed finding with a reason:
 
 ```html
 <!-- wcag-audit-ignore img-alt: tracking pixel, hidden from AT -->
@@ -204,7 +204,7 @@ Inputs: `targets`, `fail-on`, `sarif-file`, `upload-sarif`, `baseline` (path to 
 | `img-alt-meaningful` | 1.1.1 | minor | `alt="image.png"`, `alt="photo"` |
 | `input-image-alt` | 1.1.1, 4.1.2 | critical | `<input type="image">` without `alt` |
 | `svg-img-name` | 1.1.1 | serious | `<svg role="img">` without a name |
-| `form-label` | 1.3.1, 3.3.2, 4.1.2 | critical | inputs/selects/textareas without a label (placeholder ≠ label) |
+| `form-label` | 1.3.1, 3.3.2, 4.1.2 | critical | inputs/selects/textareas without a label (placeholder ≠ label), including thin `<Input>` wrappers and design-system inputs (`<TextField>` without `label`) |
 | `button-name` | 4.1.2 | critical | empty and icon-only buttons |
 | `link-name` | 2.4.4, 4.1.2 | serious | empty and icon-only links |
 | `link-text-vague` | 2.4.4 | minor | "click here", "read more" |
@@ -264,12 +264,12 @@ Measured on 10 real codebases (React/Next, Vue, SvelteKit, Astro, plain-HTML ext
 | `focus-visible` | pixel-verified: 4 medium-confidence findings, all real (the style-only check had reported 64, 4 of them real) |
 | `keyboard-trap` | 0 findings on 7 real pages (no false alarms) |
 
-Known gaps: labels and names that come from component props in another file are invisible to the static scan (the runtime scan sees them).
+Known gaps: form labels are followed into imported project components, but other names and labels that come from component props in another file (a button's `label` prop, an icon's `title`) are invisible to the static scan (the runtime scan sees them).
 
 ## Roadmap
 
 - [x] MDX files (JSX and HTML blocks, plus Markdown headings, links and images; code blocks are skipped)
-- [ ] Resolving labels across files (imported `<Field>`, MUI `<TextField label>`)
+- [x] Resolving labels across files: imported `<Field>` wrappers, thin `<Input>` components, MUI `<TextField label>` and other design-system inputs
 - [x] Rules: `autocomplete-valid` (1.3.5), `label-in-name` (2.5.3), `table-headers`, `duplicate-id-ref`, `tailwind-contrast` (Tailwind contrast from class names)
 - [x] CSS analysis: `outline: none` without `:focus-visible` replacement (2.4.7) in `.css` / `.scss` / `.less`, `<style>` blocks and Tailwind classes (`focus-outline-removed`)
 - [ ] Angular template files (`.component.html` works today; inline `template:` strings next)

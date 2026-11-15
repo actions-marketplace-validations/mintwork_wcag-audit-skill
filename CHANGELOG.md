@@ -10,6 +10,13 @@ within a minor line.
 
 ### Added
 
+- **Labels resolved across files** (`form-label`): components imported from the project are looked up through
+  relative imports, tsconfig / jsconfig `paths` and workspace packages. A thin wrapper that forwards its props to
+  one `<input>` / `<select>` / `<textarea>` (shadcn's `<Input>`) is checked at each call site, and an imported
+  `<Field>` wrapper whose `<label>` is not associated is reported, both at medium confidence.
+- **Design-system inputs** (`form-label`, medium confidence): MUI `<TextField>` without `label`, antd `<Input>`
+  outside `<Form.Item label>`, Mantine, Chakra, React Aria, HeroUI, React Bootstrap, Fluent UI and Headless UI
+  inputs without their label prop or wrapper.
 - **MDX files** (`.mdx`) are scanned: JSX and HTML elements and `{expressions}`, plus Markdown headings, links
   and images, so `heading-order`, `link-name`, `link-text-vague` and image rules apply to docs pages.
   Frontmatter, ESM blocks and fenced code are skipped; line numbers match the source.
@@ -34,6 +41,9 @@ within a minor line.
 
 ### Fixed
 
+- `<Label htmlFor>`, `<FormLabel htmlFor>`, `<FieldLabel htmlFor>` (shadcn, Radix, design systems) now associate a
+  label like `<label for>`; `antd` `<Form.Item>`, `<FormControl>`, `<FormGroup>` and `<Input.Wrapper>` count as
+  label wrappers, so controls inside them are no longer reported.
 - Suppression comments with a reason (`wcag-audit-ignore img-alt: tracking pixel`), the documented form, now
   suppress the finding. The colon and the words of the reason were read as rule ids, so nothing was suppressed.
 - The static HTML scanner ends comments where browsers do (`--!>`, `<!-->`, `<!--->`), so markup
