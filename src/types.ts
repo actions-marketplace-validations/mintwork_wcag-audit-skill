@@ -62,4 +62,6 @@ export interface ScanResult {
   state?: import("./runtime/states.js").RuntimeState;
   /** Findings hidden because they are in the --baseline file. */
   baselined?: number;
+  /** Storybook scans: the story, and the Storybook (URL or static build directory) it came from. */
+  story?: { id: string; title: string; name: string; source: string };
 }

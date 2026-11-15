@@ -57,6 +57,9 @@ Runtime
   --storage-state <file> Playwright storage state (cookies, localStorage) for authenticated pages
   --color-scheme <s>     light | dark (prefers-color-scheme)
   --viewport <WxH>       viewport size, e.g. 320x640 (default 1280x800)
+  --storybook <url|dir>  scan every story of a Storybook (running URL or static build directory)
+  --stories <patterns>   with --storybook: only stories whose id or title contains one of these
+                         comma-separated substrings
   --browser <channel>    chromium | chrome | msedge (default: auto-detect)
   --headed               show the browser window
   --timeout <ms>         navigation timeout (default: 30000)
@@ -92,6 +95,8 @@ async function main(argv: string[]): Promise<number> {
       "storage-state": { type: "string" },
       "color-scheme": { type: "string" },
       viewport: { type: "string" },
+      storybook: { type: "string" },
+      stories: { type: "string" },
       browser: { type: "string" },
       headed: { type: "boolean" },
       timeout: { type: "string" },
@@ -174,7 +179,7 @@ async function main(argv: string[]): Promise<number> {
 
   if (command !== "scan") return usage(`Unknown command "${command}"`);
   const config = values.config ? await loadRuntimeConfig(values.config) : undefined;
-  if (!targets.length && !config) return usage("scan needs at least one <path|url> (or --config)");
+  if (!targets.length && !config && !values.storybook) return usage("scan needs at least one <path|url> (or --config / --storybook)");
   const storageState = values["storage-state"] ?? config?.storageState;
   if (storageState && !existsSync(storageState)) return usage(`storage state file not found: ${storageState}`);
   opts.storageState = storageState;
@@ -186,6 +191,11 @@ async function main(argv: string[]): Promise<number> {
   let results: ScanResult[] = [];
   for (const t of targets) results.push(await scan(t, opts));
   if (config) results.push(...(await scanJobs(jobsFromConfig(config), opts)));
+  if (values.storybook) {
+    const { scanStorybook } = await import("./runtime/storybook.js");
+    const progress = process.stderr.isTTY ? (i: number, n: number) => process.stderr.write(`\r${TOOL.name}: story ${i}/${n}${i === n ? "\n" : ""}`) : undefined;
+    results.push(...(await scanStorybook(values.storybook, { ...opts, stories: values.stories, onStory: progress })));
+  }
 
   if (values.fix || values["dry-run"]) {
     const dryRun = !!values["dry-run"];

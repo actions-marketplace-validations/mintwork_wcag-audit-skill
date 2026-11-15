@@ -10,6 +10,10 @@ within a minor line.
 
 ### Added
 
+- **Storybook integration**: `scan --storybook <url|dir>` scans every story of a running Storybook or a static
+  build. It reads `index.json` (7+) or `stories.json` (6.x), skips docs entries, opens each story's iframe in one
+  browser and excludes Storybook's own UI from axe. `--stories a,b` limits it to stories whose id or title
+  contains a pattern. Finding ids come from the story id (stable across ports); `verify` re-scans the story.
 - **Angular inline templates**: `template:` strings in `@Component({...})` are scanned in `.ts` files, with line
   and column numbers in the `.ts` source. Other TypeScript files are skipped and not counted.
 - **Multi-state runtime scans** (`scan --config <file>`): a JSON config lists pages and states; each page is

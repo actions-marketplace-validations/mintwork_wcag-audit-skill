@@ -119,6 +119,7 @@ npx @mintwork/wcag-audit-skill rules                             # list rules + 
 | `--config <file>` | scan pages × states from a JSON config (see [Runtime states](#runtime-states)) |
 | `--storage-state <file>` | Playwright storage state (cookies, localStorage) for authenticated pages |
 | `--color-scheme dark\|light` / `--viewport 320x640` | one-off state without a config |
+| `--storybook <url\|dir>` / `--stories a,b` | scan every story of a running Storybook or a static build (`storybook-static/`); `--stories` filters by id / title |
 | `--no-keyboard` / `--no-verify` | skip Tab traversal / skip the verification re-run |
 | `--browser chrome\|msedge` | browser channel (auto-detects Playwright Chromium, Chrome, Edge) |
 
@@ -145,6 +146,8 @@ npx @mintwork/wcag-audit-skill scan --config wcag-audit.config.json
 ```
 
 Steps: `click`, `fill` (+ `value`), `press` (+ optional `selector`), `hover`, `check`, `select` (+ `value`), `waitFor`, `wait` (ms). States also take `colorScheme`, `viewport` and `reducedMotion`. All states run in one browser; findings carry `location.state`, ids include the state, and `verify` replays it. **Authenticated pages:** record a [storage state](https://playwright.dev/docs/auth) once (`npx playwright codegen --save-storage=.auth/user.json <login-url>`) and pass `--storage-state .auth/user.json` (or `"storageState"` in the config, relative to it). Keep it out of git.
+
+**Storybook:** `scan --storybook http://localhost:6006` (or `--storybook storybook-static`) reads the story index (`index.json`, or `stories.json` for 6.x), opens every story's `iframe.html?id=…` in one browser and runs the runtime scan on each, skipping docs pages and Storybook's own UI. Finding ids come from the story id, so they stay stable across runs and ports, and `verify` re-scans the story.
 
 **Runtime browser:** uses Playwright's Chromium if installed (`npx playwright install chromium`), otherwise your local Chrome or Edge. Set `WCAG_AUDIT_CHROME_PATH` for a custom binary.
 
@@ -314,7 +317,7 @@ Known gaps: form labels are followed into imported project components, but other
 - [ ] Map runtime selectors back to source files automatically (React DevTools / source maps)
 - [x] `--fix` / `--dry-run` for mechanical rules (`html-lang`, `meta-viewport-zoom`, `aria-attr-valid` typos)
 - [x] Baseline file to fail CI only on new findings (`--baseline`, `--write-baseline`, action input `baseline`)
-- [ ] Storybook integration: scan every story
+- [x] Storybook integration: scan every story (`--storybook <url|dir>`)
 
 Have an idea or a false positive? [Open an issue](CONTRIBUTING.md) with a minimal snippet.
 

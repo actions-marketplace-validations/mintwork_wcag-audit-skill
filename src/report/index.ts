@@ -40,7 +40,12 @@ export function counts(findings: Finding[]): Record<Severity, number> {
 export function formatText(results: ScanResult[]): string {
   const lines: string[] = [];
   for (const r of results) {
-    const head = r.kind === "static" ? `Static scan of ${r.target} (${r.filesScanned ?? 0} file${r.filesScanned === 1 ? "" : "s"})` : `Runtime scan of ${r.target}${r.state ? ` (state: ${r.state.name})` : ""}`;
+    const head =
+      r.kind === "static"
+        ? `Static scan of ${r.target} (${r.filesScanned ?? 0} file${r.filesScanned === 1 ? "" : "s"})`
+        : r.story
+          ? `Story ${r.story.title} / ${r.story.name} (${r.target})`
+          : `Runtime scan of ${r.target}${r.state ? ` (state: ${r.state.name})` : ""}`;
     lines.push(c("1", head));
     if (!r.findings.length) {
       lines.push(c("32", r.baselined ? "  ✓ No new accessibility issues (all findings are in the baseline)." : "  ✓ No accessibility issues found by automated checks."));

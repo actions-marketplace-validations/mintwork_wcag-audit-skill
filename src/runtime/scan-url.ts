@@ -23,6 +23,10 @@ export interface RuntimeOptions extends LaunchOptions {
   waitFor?: string;
   timeoutMs?: number;
   viewport?: { width: number; height: number };
+  /** CSS selectors axe-core should not check (e.g. Storybook's own UI around a story). */
+  exclude?: string[];
+  /** Don't fail when `waitFor` never appears (a story may legitimately render nothing). */
+  waitForOptional?: boolean;
   /** Playwright storage state file (cookies + localStorage) for authenticated pages. */
   storageState?: string;
   colorScheme?: "light" | "dark";
@@ -85,7 +89,11 @@ export async function scanUrl(url: string, opts: RuntimeOptions = {}): Promise<S
     });
     const page = await context.newPage();
     await page.goto(url, { waitUntil: "load", timeout: opts.timeoutMs ?? 30_000 });
-    if (opts.waitFor) await page.waitForSelector(opts.waitFor, { timeout: opts.timeoutMs ?? 30_000 });
+    if (opts.waitFor) {
+      const waiting = page.waitForSelector(opts.waitFor, { timeout: opts.timeoutMs ?? 30_000 });
+      if (opts.waitForOptional) await waiting.catch(() => {});
+      else await waiting;
+    }
     await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
     if (state?.steps?.length) await runSteps(page, state.steps, Math.min(opts.timeoutMs ?? 10_000, 10_000));
 
@@ -95,7 +103,8 @@ export async function scanUrl(url: string, opts: RuntimeOptions = {}): Promise<S
       runOnly: { type: "tag", values: tagsFor(opts.level ?? "AA", !!opts.bestPractice) },
       resultTypes: ["violations"],
     };
-    const violations = await runAxe(page, runOptions);
+    const axeContext = opts.exclude?.length ? { include: [["html"]], exclude: opts.exclude.map((s) => [s]) } : undefined;
+    const violations = await runAxe(page, runOptions, axeContext);
 
     let discarded = 0;
     const findings: Finding[] = [];
