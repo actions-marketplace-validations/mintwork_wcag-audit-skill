@@ -28,6 +28,7 @@ each one wrong**. Only findings that survive become `confirmed`.
 | `no-div-button` | the handler only stops propagation / the real control is a child `<button>` |
 | `anchor-is-button` | a router intercepts and the `href` is real at runtime |
 | `heading-order` | the component is always rendered under a heading of the right level (check its parents) — still prefer configurable levels |
+| `focus-outline-removed` | another stylesheet or a wrapper component draws the focus state (`:focus-within`, a design-system focus ring), or the element is never keyboard-focusable. Confirm with Tab in the browser (`focus-visible` runtime check) |
 | `autocomplete-valid` | never a false positive for an invalid token, but 1.3.5 only applies to fields collecting data *about the user*: an invalid value on a search or filter box is minor hygiene |
 | `label-in-name` | the visible text is not the label (e.g. a counter badge), or the name starts with the visible text in another form the user would speak |
 | `table-headers` | the table is purely for layout (then add `role="presentation"`), or headers are added by a component the scan did not see |

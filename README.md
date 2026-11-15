@@ -86,7 +86,7 @@ The skill ([`skills/wcag-audit/SKILL.md`](skills/wcag-audit/SKILL.md)) gives the
 
 | Phase | What happens | Output |
 | --- | --- | --- |
-| **1. Static scan** | CLI parses HTML, JSX/TSX, Vue, Svelte, Astro and checks 29 rules. The agent then reviews what tools miss: shared components, `outline: none`, color-only state. | `.wcag-audit/static.json` |
+| **1. Static scan** | CLI parses HTML, JSX/TSX, Vue, Svelte, Astro and checks 30 rules. The agent then reviews what tools miss: shared components, focus styles in CSS-in-JS, color-only state. | `.wcag-audit/static.json` |
 | **2. Runtime scan** | Starts your dev server, opens pages in real Chromium, runs **axe-core**, and **tabs through the page** to catch keyboard traps and invisible focus. | `.wcag-audit/runtime.json` |
 | **3. Verification** | Each candidate is re-checked to *disprove* it: trace props and spreads, check the rendered DOM. Verdict: `confirmed`, `needs_validation`, or `rejected`. Runtime violations are re-run automatically and dropped if they don't reproduce. | verdicts |
 | **4. Fix** | Minimal, native-HTML-first fixes in your framework's idiom, each explained (what was wrong, who it affected, what changed). Visual/copy changes need your OK. Never invents alt text. | diffs + `verify` |
@@ -95,7 +95,7 @@ The skill ([`skills/wcag-audit/SKILL.md`](skills/wcag-audit/SKILL.md)) gives the
 ## CLI
 
 ```bash
-npx @mintwork/wcag-audit-skill scan ./src                        # static: HTML / JSX / TSX / Vue / Svelte / Astro
+npx @mintwork/wcag-audit-skill scan ./src                        # static: HTML / JSX / TSX / Vue / Svelte / Astro / CSS
 npx @mintwork/wcag-audit-skill scan http://localhost:3000        # runtime: axe-core + keyboard checks in Chromium
 npx @mintwork/wcag-audit-skill scan ./dist/index.html --runtime  # open a local file in the browser
 npx @mintwork/wcag-audit-skill scan ./src --json -o a11y.json    # machine-readable
@@ -216,6 +216,7 @@ Inputs: `targets`, `fail-on`, `sarif-file`, `upload-sarif`, `baseline` (path to 
 | `html-lang` | 3.1.1 | serious | missing / invalid `<html lang>` |
 | `document-title` | 2.4.2 | serious | missing / empty `<title>` |
 | `no-positive-tabindex` | 2.4.3 | serious | `tabindex="3"` |
+| `focus-outline-removed` | 2.4.7 | serious | `outline: none` / `outline: 0` in `.css` / `.scss` / `.less` / `<style>`, or Tailwind `outline-none` / `focus:outline-none` on a focusable element, with no `:focus-visible` / `focus:ring` replacement |
 | `iframe-title` | 4.1.2 | serious | untitled iframes |
 | `aria-hidden-focusable` | 4.1.2 | serious | focusable content inside `aria-hidden` |
 | `aria-role-valid` | 4.1.2 | serious | `role="buton"` (suggests `button`) |
@@ -269,7 +270,7 @@ Known gaps: `.mdx` files are not scanned; labels and names that come from compon
 
 - [ ] MDX files, and resolving labels across files (imported `<Field>`, MUI `<TextField label>`)
 - [x] Rules: `autocomplete-valid` (1.3.5), `label-in-name` (2.5.3), `table-headers`, `duplicate-id-ref`, `tailwind-contrast` (Tailwind contrast from class names)
-- [ ] CSS analysis: `outline: none` without `:focus-visible` replacement (2.4.7) in source
+- [x] CSS analysis: `outline: none` without `:focus-visible` replacement (2.4.7) in `.css` / `.scss` / `.less`, `<style>` blocks and Tailwind classes (`focus-outline-removed`)
 - [ ] Angular template files (`.component.html` works today; inline `template:` strings next)
 - [ ] Multi-state runtime scans from a config file (open modal, submit empty form, dark mode, 320px)
 - [ ] Authenticated scans via Playwright storage state

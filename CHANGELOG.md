@@ -10,7 +10,13 @@ within a minor line.
 
 ### Added
 
-- **New static rules** (29 in total), each mapped to WCAG 2.2 and documented in `references/RULES.md`:
+- **CSS analysis** (`focus-outline-removed`, WCAG 2.4.7): the static scan now reads `.css`, `.scss` and `.less`
+  files and `<style>` blocks (HTML, Vue, Svelte, Astro), and reports `outline: none` / `outline: 0` on focus or
+  focusable selectors when no focus style in the same stylesheet replaces it. It also reports Tailwind
+  `outline-none` / `focus:outline-none` on focusable elements without a `focus:` / `focus-visible:` ring,
+  outline, border or shadow class (or a `focus-within:` wrapper, `group-focus` / `peer-focus` indicator). Text
+  fields, `tabindex="-1"`, composite widgets, components and the `:focus:not(:focus-visible)` pattern are skipped.
+- **Five new static rules**, each mapped to WCAG 2.2 and documented in `references/RULES.md`:
   - `autocomplete-valid` (1.3.5): invalid `autocomplete` values, with the intended token for typos and
     common aliases (`emial` → `email`, `firstname` → `given-name`, `work name` → `name`).
   - `label-in-name` (2.5.3): `aria-label` that does not contain the control's visible text.
