@@ -9,3 +9,4 @@ export { fixSource, planFixes, writeFixes, unifiedDiff, FIXABLE_RULES, type File
 export { createResolver, type ComponentResolver, type ComponentDef } from "./static/resolve.js";
 export { applyBaseline, createBaseline, readBaseline, writeBaseline, DEFAULT_BASELINE, type Baseline, type BaselineEntry } from "./baseline.js";
 export { scanStorybook, storiesFromIndex, filterStories, type Story, type StorybookOptions } from "./runtime/storybook.js";
+export { addSourceHints, handlesFor } from "./runtime/source-hints.js";

@@ -10,6 +10,10 @@ within a minor line.
 
 ### Added
 
+- **Source hints for runtime findings** (`--source <dir>`): each runtime finding is searched for in the source by
+  its test id (`data-testid`, `data-cy`, …), id, `aria-label` / `alt` / `placeholder` / `name`, project class names
+  (not utility classes) and short text. When one file clearly wins, the finding gets
+  `sourceHint: { file, line, via }`, shown in text output and as a SARIF related location. Best effort: verify it.
 - **Storybook integration**: `scan --storybook <url|dir>` scans every story of a running Storybook or a static
   build. It reads `index.json` (7+) or `stories.json` (6.x), skips docs entries, opens each story's iframe in one
   browser and excludes Storybook's own UI from axe. `--stories a,b` limits it to stories whose id or title

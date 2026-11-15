@@ -60,6 +60,8 @@ Runtime
   --storybook <url|dir>  scan every story of a Storybook (running URL or static build directory)
   --stories <patterns>   with --storybook: only stories whose id or title contains one of these
                          comma-separated substrings
+  --source <dir>         map runtime findings to likely source files (best effort; reported as a
+                         hint) by searching <dir> for test ids, ids, labels, class names and text
   --browser <channel>    chromium | chrome | msedge (default: auto-detect)
   --headed               show the browser window
   --timeout <ms>         navigation timeout (default: 30000)
@@ -97,6 +99,7 @@ async function main(argv: string[]): Promise<number> {
       viewport: { type: "string" },
       storybook: { type: "string" },
       stories: { type: "string" },
+      source: { type: "string" },
       browser: { type: "string" },
       headed: { type: "boolean" },
       timeout: { type: "string" },
@@ -195,6 +198,14 @@ async function main(argv: string[]): Promise<number> {
     const { scanStorybook } = await import("./runtime/storybook.js");
     const progress = process.stderr.isTTY ? (i: number, n: number) => process.stderr.write(`\r${TOOL.name}: story ${i}/${n}${i === n ? "\n" : ""}`) : undefined;
     results.push(...(await scanStorybook(values.storybook, { ...opts, stories: values.stories, onStory: progress })));
+  }
+  if (values.source) {
+    const { addSourceHints } = await import("./runtime/source-hints.js");
+    const runtime = results.filter((r) => r.kind === "runtime").reduce((n, r) => n + r.findings.length, 0);
+    if (runtime) {
+      const n = await addSourceHints(results, values.source, { ignore: opts.ignore });
+      console.error(`${TOOL.name}: source hints for ${n} of ${runtime} runtime finding${runtime === 1 ? "" : "s"} (verify before editing)`);
+    }
   }
 
   if (values.fix || values["dry-run"]) {

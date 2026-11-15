@@ -120,6 +120,7 @@ npx @mintwork/wcag-audit-skill rules                             # list rules + 
 | `--storage-state <file>` | Playwright storage state (cookies, localStorage) for authenticated pages |
 | `--color-scheme dark\|light` / `--viewport 320x640` | one-off state without a config |
 | `--storybook <url\|dir>` / `--stories a,b` | scan every story of a running Storybook or a static build (`storybook-static/`); `--stories` filters by id / title |
+| `--source <dir>` | runtime: add a `sourceHint` (file:line, best effort) to each finding by searching `<dir>` for its test id, id, labels, class names and text |
 | `--no-keyboard` / `--no-verify` | skip Tab traversal / skip the verification re-run |
 | `--browser chrome\|msedge` | browser channel (auto-detects Playwright Chromium, Chrome, Edge) |
 
@@ -171,7 +172,7 @@ Steps: `click`, `fill` (+ `value`), `press` (+ optional `selector`), `hover`, `c
 }
 ```
 
-Runtime findings carry `location.url` + `location.selector` and `"verified": true`. IDs are stable fingerprints (rule + file + element), so they survive line moves and power `verify`.
+Runtime findings carry `location.url` + `location.selector` and `"verified": true`; with `--source src` they also get a `sourceHint` (`{ "file", "line", "via": ["data-testid=\"pay\""] }`, a SARIF related location), only when one file clearly matches. IDs are stable fingerprints (rule + file + element), so they survive line moves and power `verify`.
 
 ### Fixing mechanical findings
 
@@ -314,7 +315,7 @@ Known gaps: form labels are followed into imported project components, but other
 - [x] Angular templates: `.component.html` files and inline `template:` strings in `@Component` (`.ts`)
 - [x] Multi-state runtime scans from a config file (open modal, submit empty form, dark mode, 320px): `--config`
 - [x] Authenticated scans via Playwright storage state: `--storage-state`
-- [ ] Map runtime selectors back to source files automatically (React DevTools / source maps)
+- [x] Map runtime findings back to source, as a hint (`--source <dir>`: test ids, ids, labels, class names, text). Source maps / React DevTools: not yet
 - [x] `--fix` / `--dry-run` for mechanical rules (`html-lang`, `meta-viewport-zoom`, `aria-attr-valid` typos)
 - [x] Baseline file to fail CI only on new findings (`--baseline`, `--write-baseline`, action input `baseline`)
 - [x] Storybook integration: scan every story (`--storybook <url|dir>`)
