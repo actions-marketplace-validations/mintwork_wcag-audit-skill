@@ -10,6 +10,12 @@ within a minor line.
 
 ### Added
 
+- **Multi-state runtime scans** (`scan --config <file>`): a JSON config lists pages and states; each page is
+  scanned in its default state and in every state, all in one browser. States set `colorScheme`, `viewport`,
+  `reducedMotion` and run steps (`click`, `fill`, `press`, `hover`, `check`, `select`, `waitFor`, `wait`) to open a
+  modal or submit an empty form first. Findings carry `location.state`, their ids include the state, and `verify`
+  replays it. `--color-scheme` and `--viewport WxH` set a single state without a config.
+- **Authenticated scans** with a Playwright storage state: `--storage-state <file>` or `"storageState"` in the config.
 - **`--fix` and `--dry-run`** for mechanical findings: `html-lang` (repairs `en_US`, `English`; adds a missing
   `lang` only with `--lang <code>`), `meta-viewport-zoom` (drops `user-scalable=no` / low `maximum-scale`) and
   unambiguous `aria-attr-valid` typos. A unified diff is always printed before files are written; `--dry-run`
