@@ -308,7 +308,7 @@ Known gaps: form labels are followed into imported project components, but other
 - [x] Resolving labels across files: imported `<Field>` wrappers, thin `<Input>` components, MUI `<TextField label>` and other design-system inputs
 - [x] Rules: `autocomplete-valid` (1.3.5), `label-in-name` (2.5.3), `table-headers`, `duplicate-id-ref`, `tailwind-contrast` (Tailwind contrast from class names)
 - [x] CSS analysis: `outline: none` without `:focus-visible` replacement (2.4.7) in `.css` / `.scss` / `.less`, `<style>` blocks and Tailwind classes (`focus-outline-removed`)
-- [ ] Angular template files (`.component.html` works today; inline `template:` strings next)
+- [x] Angular templates: `.component.html` files and inline `template:` strings in `@Component` (`.ts`)
 - [x] Multi-state runtime scans from a config file (open modal, submit empty form, dark mode, 320px): `--config`
 - [x] Authenticated scans via Playwright storage state: `--storage-state`
 - [ ] Map runtime selectors back to source files automatically (React DevTools / source maps)

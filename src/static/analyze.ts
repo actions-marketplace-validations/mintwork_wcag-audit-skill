@@ -8,6 +8,7 @@ import { type ElementNode, type Framework, type ParsedDocument, createRoot, trun
 import { outlineIssues, styleBlocks } from "./css.js";
 import { walk } from "./helpers.js";
 import { parseMarkup } from "./parse-html.js";
+import { mayHaveInlineTemplate, parseAngularComponent } from "./parse-angular.js";
 import { parseJsx } from "./parse-jsx.js";
 import { parseMdx } from "./parse-mdx.js";
 import { type ComponentResolver, createResolver } from "./resolve.js";
@@ -45,8 +46,13 @@ export interface StaticOptions {
   resolver?: ComponentResolver;
 }
 
+/** TypeScript files are only scanned for Angular inline templates (`@Component({ template: ... })`). */
+const ANGULAR_EXTENSIONS = new Set([".ts", ".mts"]);
+
 export function parseFile(file: string, source: string): ParsedDocument | undefined {
-  const fw = SUPPORTED_EXTENSIONS[path.extname(file).toLowerCase()];
+  const ext = path.extname(file).toLowerCase();
+  if (ANGULAR_EXTENSIONS.has(ext) && !file.endsWith(".d.ts")) return mayHaveInlineTemplate(source) ? parseAngularComponent(file, source) : undefined;
+  const fw = SUPPORTED_EXTENSIONS[ext];
   if (!fw) return undefined;
   if (fw === "jsx") {
     // Skip plain JS that contains no JSX at all (cheap pre-check, big speedup on large repos).
@@ -206,7 +212,7 @@ export async function collectFiles(target: string, ignore: string[] = []): Promi
       if (e.isDirectory()) {
         if (e.name.startsWith(".") && e.name !== ".") continue;
         await recurse(full);
-      } else if (e.isFile() && isScannable(e.name)) {
+      } else if (e.isFile() && (isScannable(e.name) || isAngularCandidate(e.name))) {
         out.push(full);
       }
     }
@@ -221,6 +227,11 @@ function isScannable(name: string): boolean {
   return !/\.(test|spec|stories)\.[jt]sx?$/.test(name) && !/\.min\.(js|css)$/.test(name) && !/\.module\.css\.d\.ts$/.test(name);
 }
 
+/** .ts files that may hold Angular components (read, then pre-checked for @Component + template:). */
+function isAngularCandidate(name: string): boolean {
+  return ANGULAR_EXTENSIONS.has(path.extname(name).toLowerCase()) && !name.endsWith(".d.ts") && !/\.(spec|test|stories)\.m?ts$/.test(name);
+}
+
 export async function scanStatic(target: string, opts: StaticOptions = {}): Promise<ScanResult> {
   const started = Date.now();
   const cwd = opts.cwd ?? process.cwd();
@@ -228,9 +239,13 @@ export async function scanStatic(target: string, opts: StaticOptions = {}): Prom
   const findings: Finding[] = [];
   const absTarget = path.resolve(cwd, target);
   const resolver = opts.resolver ?? createResolver(path.relative(cwd, absTarget).startsWith("..") ? absTarget : cwd);
+  let scanned = 0;
   for (const abs of files) {
     const source = await readFile(abs, "utf8");
     if (source.length > 2_000_000) continue;
+    // Plain TypeScript (no Angular inline template) is not UI source: not scanned, not counted.
+    if (isAngularCandidate(path.basename(abs)) && !mayHaveInlineTemplate(source)) continue;
+    scanned++;
     // Outside cwd, a "../../.." path is useless in reports and SARIF; use the absolute path instead.
     const relative = path.relative(cwd, abs);
     const rel = (relative.startsWith("..") || path.isAbsolute(relative) ? abs : relative).split(path.sep).join("/") || path.basename(abs);
@@ -242,7 +257,7 @@ export async function scanStatic(target: string, opts: StaticOptions = {}): Prom
     kind: "static",
     startedAt: new Date(started).toISOString(),
     durationMs: Date.now() - started,
-    filesScanned: files.length,
+    filesScanned: scanned,
     findings,
     discarded: 0,
   };

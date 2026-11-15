@@ -10,6 +10,8 @@ within a minor line.
 
 ### Added
 
+- **Angular inline templates**: `template:` strings in `@Component({...})` are scanned in `.ts` files, with line
+  and column numbers in the `.ts` source. Other TypeScript files are skipped and not counted.
 - **Multi-state runtime scans** (`scan --config <file>`): a JSON config lists pages and states; each page is
   scanned in its default state and in every state, all in one browser. States set `colorScheme`, `viewport`,
   `reducedMotion` and run steps (`click`, `fill`, `press`, `hover`, `check`, `select`, `waitFor`, `wait`) to open a
@@ -48,6 +50,13 @@ within a minor line.
   (or the `--baseline <file>` path); `scan --baseline <file>` then reports and fails only on findings that
   are not in it. Matching uses the stable finding ids. A `--json` report also works as a baseline. The JSON
   summary gains `baselined`, and the GitHub Action a `baseline` input.
+
+### Changed
+
+- Fewer false positives in component-library templates: `no-div-button` and `interactive-role-keyboard` skip
+  elements with Angular attribute directives (`<div ngCombobox>`), `no-div-button` skips click handlers on content
+  inside an element with an interactive role (`<li role="option"><div (click)>`), and `button-name` treats a
+  `label="…"` attribute on `<button>` (`<button pButton label>`) as a name.
 
 ### Fixed
 
