@@ -70,6 +70,8 @@ rg -n "onClick=" src | rg -v "<(button|a|input|select|summary|[A-Z])"
   common failure. `@angular/cdk/a11y` provides `FocusTrap` and `LiveAnnouncer`.
 - **Astro**: frontmatter is skipped; framework islands (`.tsx`, `.vue`, `.svelte`) are
   scanned by their own parsers.
+- **MDX**: JSX blocks and Markdown headings / links / images are scanned; components used in
+  MDX (`<Callout>`, `<Video>`) are opaque, so check their definitions. Fenced code is skipped.
 - **Tailwind**: `sr-only` for hidden labels; `focus-visible:ring-2` as the focus style;
   `tailwind-contrast` checks `text-*` on `bg-*` only when both are static default-palette
   classes. Review pairs it skips: `cn()` / `clsx()` classes, theme colors (`text-muted-foreground`),

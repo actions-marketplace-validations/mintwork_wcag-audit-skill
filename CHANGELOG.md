@@ -10,6 +10,9 @@ within a minor line.
 
 ### Added
 
+- **MDX files** (`.mdx`) are scanned: JSX and HTML elements and `{expressions}`, plus Markdown headings, links
+  and images, so `heading-order`, `link-name`, `link-text-vague` and image rules apply to docs pages.
+  Frontmatter, ESM blocks and fenced code are skipped; line numbers match the source.
 - **CSS analysis** (`focus-outline-removed`, WCAG 2.4.7): the static scan now reads `.css`, `.scss` and `.less`
   files and `<style>` blocks (HTML, Vue, Svelte, Astro), and reports `outline: none` / `outline: 0` on focus or
   focusable selectors when no focus style in the same stylesheet replaces it. It also reports Tailwind

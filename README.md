@@ -86,7 +86,7 @@ The skill ([`skills/wcag-audit/SKILL.md`](skills/wcag-audit/SKILL.md)) gives the
 
 | Phase | What happens | Output |
 | --- | --- | --- |
-| **1. Static scan** | CLI parses HTML, JSX/TSX, Vue, Svelte, Astro and checks 30 rules. The agent then reviews what tools miss: shared components, focus styles in CSS-in-JS, color-only state. | `.wcag-audit/static.json` |
+| **1. Static scan** | CLI parses HTML, JSX/TSX, Vue, Svelte, Astro, MDX and CSS and checks 30 rules. The agent then reviews what tools miss: shared components, focus styles in CSS-in-JS, color-only state. | `.wcag-audit/static.json` |
 | **2. Runtime scan** | Starts your dev server, opens pages in real Chromium, runs **axe-core**, and **tabs through the page** to catch keyboard traps and invisible focus. | `.wcag-audit/runtime.json` |
 | **3. Verification** | Each candidate is re-checked to *disprove* it: trace props and spreads, check the rendered DOM. Verdict: `confirmed`, `needs_validation`, or `rejected`. Runtime violations are re-run automatically and dropped if they don't reproduce. | verdicts |
 | **4. Fix** | Minimal, native-HTML-first fixes in your framework's idiom, each explained (what was wrong, who it affected, what changed). Visual/copy changes need your OK. Never invents alt text. | diffs + `verify` |
@@ -95,7 +95,7 @@ The skill ([`skills/wcag-audit/SKILL.md`](skills/wcag-audit/SKILL.md)) gives the
 ## CLI
 
 ```bash
-npx @mintwork/wcag-audit-skill scan ./src                        # static: HTML / JSX / TSX / Vue / Svelte / Astro / CSS
+npx @mintwork/wcag-audit-skill scan ./src                        # static: HTML / JSX / TSX / Vue / Svelte / Astro / MDX / CSS
 npx @mintwork/wcag-audit-skill scan http://localhost:3000        # runtime: axe-core + keyboard checks in Chromium
 npx @mintwork/wcag-audit-skill scan ./dist/index.html --runtime  # open a local file in the browser
 npx @mintwork/wcag-audit-skill scan ./src --json -o a11y.json    # machine-readable
@@ -264,11 +264,12 @@ Measured on 10 real codebases (React/Next, Vue, SvelteKit, Astro, plain-HTML ext
 | `focus-visible` | pixel-verified: 4 medium-confidence findings, all real (the style-only check had reported 64, 4 of them real) |
 | `keyboard-trap` | 0 findings on 7 real pages (no false alarms) |
 
-Known gaps: `.mdx` files are not scanned; labels and names that come from component props in another file are invisible to the static scan (the runtime scan sees them).
+Known gaps: labels and names that come from component props in another file are invisible to the static scan (the runtime scan sees them).
 
 ## Roadmap
 
-- [ ] MDX files, and resolving labels across files (imported `<Field>`, MUI `<TextField label>`)
+- [x] MDX files (JSX and HTML blocks, plus Markdown headings, links and images; code blocks are skipped)
+- [ ] Resolving labels across files (imported `<Field>`, MUI `<TextField label>`)
 - [x] Rules: `autocomplete-valid` (1.3.5), `label-in-name` (2.5.3), `table-headers`, `duplicate-id-ref`, `tailwind-contrast` (Tailwind contrast from class names)
 - [x] CSS analysis: `outline: none` without `:focus-visible` replacement (2.4.7) in `.css` / `.scss` / `.less`, `<style>` blocks and Tailwind classes (`focus-outline-removed`)
 - [ ] Angular template files (`.component.html` works today; inline `template:` strings next)

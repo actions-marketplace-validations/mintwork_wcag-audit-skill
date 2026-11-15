@@ -43,6 +43,10 @@ them manually in Phase 1.
 | `duplicate-id-ref` | 1.3.1, 4.1.2 (A) | serious | static `id` used on two elements that render together, when a `<label for>`, `aria-labelledby`, `aria-describedby`, `aria-controls`, `headers`, `list`, … points to it. Skips conditional branches (`v-if`/`v-else`, `{#if}`, `{a ? … : …}`), separate JSX components and HTML `<template>` content |
 | `tailwind-contrast` | 1.4.3 (AA) | serious (medium confidence) | text with a base `text-*` color on the nearest `bg-*` (self or ancestor) below 4.5:1, or 3:1 for large text (`text-2xl`+, or `text-xl` + `font-bold`). Colors come from Tailwind's default palette (must fail under both v3 and v4 values) or arbitrary hex (`text-[#777]`). Silent when either color is unknown: bound classes, theme colors, opacity / alpha, gradients, a component in between, inline styles. Disabled, `sr-only` and symbol-only text are skipped |
 
+**MDX** (`.mdx`) is scanned like JSX: JSX / HTML elements and `{expressions}`, plus Markdown headings,
+links and images (`## Title`, `[text](url)`, `![alt](src)`) as `<h2>`, `<a>` and `<img>`. Frontmatter,
+`import` / `export` blocks and fenced code are skipped, and inline code counts as text.
+
 Suppress a reviewed false positive with a comment on the line above the element, *with a
 reason*:
 
